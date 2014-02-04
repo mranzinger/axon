@@ -149,7 +149,12 @@ void WriteValue(rapidjson::Document &a_doc, rapidjson::Value &a_jsVal, const ADa
 	case DataType::Null:
 		a_jsVal.SetNull();
 		break;
+
+	default:
+		throw std::runtime_error("Unsupported data type.");
 	}
+
+
 
 #undef VALSET
 }

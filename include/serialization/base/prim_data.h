@@ -8,6 +8,7 @@
 #define PRIM_DATA_H_
 
 #include <string>
+#include <string.h>
 #include <sstream>
 
 #include "a_data.h"
@@ -37,6 +38,13 @@ struct CPrimCaster<std::string, B>
 
 		return l_ret;
 	}
+};
+
+template<typename B>
+struct CPrimCaster<const char *, B>
+	: CPrimCaster<std::string, B>
+{
+
 };
 
 template<typename A>
@@ -123,6 +131,11 @@ template<typename T>
 typename CPrimData<T>::Ptr MakePrim(T a_value, CSerializationContext a_context = CSerializationContext())
 {
 	return typename CPrimData<T>::Ptr(new CPrimData<T>(std::move(a_value), std::move(a_context)));
+}
+
+inline CPrimData<std::string>::Ptr MakePrim(const char *a_value, CSerializationContext a_context = CSerializationContext())
+{
+	return CPrimData<std::string>::Ptr(new CPrimData<std::string>(a_value, std::move(a_context)));
 }
 
 } }

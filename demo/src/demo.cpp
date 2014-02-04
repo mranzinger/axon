@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include "serialization/format/json_serializer.h"
+#include "serialization/format/xml_serializer.h"
 
 using namespace std;
 using namespace axon::serialization;
@@ -55,11 +56,14 @@ int main(int argc, char *argv[])
 
 	cout << "Are Same? " << (l_map1 == l_map2) << endl;
 
-	some_struct a, b;
+	string l_xml = CXmlSerializer().Serialize(l_map1);
 
-	l_json = CJsonSerializer().Serialize(a);
+	cout << l_xml << endl;
 
-	cout << endl << l_json << endl;
+	l_map2.clear();
+	CXmlSerializer().Deserialize(l_xml, l_map2);
+
+	cout << "Are Same? " << (l_map1 == l_map2) << endl;
 
 	return 0;
 }
