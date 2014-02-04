@@ -197,10 +197,13 @@ AData::Ptr ReadBuffer(const rapidjson::Document& a_doc, const rapidjson::Value& 
 
 	util::CBuffer l_buff(l_rawLen);
 
-	size_t l_decLen = util::CBase64::Decode(l_encBuff.get(), l_encLen, (unsigned char*)l_buff.Data(), l_buff.Size());
+	if (l_rawLen)
+	{
+		size_t l_decLen = util::CBase64::Decode(l_encBuff.get(), l_encLen, (unsigned char*)l_buff.Data(), l_buff.Size());
 
-	if (l_decLen != l_rawLen)
-		throw std::runtime_error("The Base 64 encoded value was corrupt.");
+		if (l_decLen != l_rawLen)
+			throw std::runtime_error("The Base 64 encoded value was corrupt.");
+	}
 
 	return AData::Ptr(new CBufferData(std::move(l_buff), l_compressed, a_context));
 }

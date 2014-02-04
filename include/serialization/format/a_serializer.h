@@ -30,14 +30,14 @@ public:
 		return SerializeData(*l_data);
 	}
 	template<typename T>
-	T Deserialize(const std::string &a_buf)
+	T Deserialize(const std::string &a_buf) const
 	{
 		T l_ret;
 		Deserialize(a_buf, l_ret);
 		return l_ret;
 	}
 	template<typename T>
-	void Deserialize(const std::string &a_buf, T &a_val)
+	void Deserialize(const std::string &a_buf, T &a_val) const
 	{
 		auto l_data = DeserializeData(a_buf.data(), a_buf.data() + a_buf.size());
 

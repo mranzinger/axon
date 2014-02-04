@@ -165,10 +165,13 @@ AData::Ptr ReadBuffer(xml_node a_node, const CSerializationContext &a_context)
 
 	util::CBuffer l_buff(l_rawLen);
 
-	size_t l_decLen = util::CBase64::Decode(a_node.child_value(), l_encLen, (unsigned char*)l_buff.Data(), l_buff.Size());
+	if (l_rawLen)
+	{
+		size_t l_decLen = util::CBase64::Decode(a_node.child_value(), l_encLen, (unsigned char*)l_buff.Data(), l_buff.Size());
 
-	if (l_decLen != l_rawLen)
-		throw std::runtime_error("The Base 64 encoded value was corrupt.");
+		if (l_decLen != l_rawLen)
+			throw std::runtime_error("The Base 64 encoded value was corrupt.");
+	}
 
 	return AData::Ptr(new CBufferData(std::move(l_buff), l_compressed, a_context));
 }

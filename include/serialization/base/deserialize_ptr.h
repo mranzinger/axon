@@ -28,7 +28,7 @@ struct CInstDeserializer
 		}
 		else
 		{
-			Deserialize(a_data, *a_val);
+			axon::serialization::Deserialize(a_data, *a_val);
 		}
 	}
 };
@@ -49,7 +49,7 @@ struct CInstDeserializer<T, true>
 			if (!a_val)
 				a_val = new T();
 
-			Deserialize(a_data, *a_val);
+			axon::serialization::Deserialize(a_data, *a_val);
 		}
 		catch (...)
 		{
@@ -78,7 +78,7 @@ struct CDeserializer<std::unique_ptr<T>>
 
 		try
 		{
-			Deserialize(a_data, l_pVal);
+			axon::serialization::Deserialize(a_data, l_pVal);
 
 			if (l_pVal != a_val.get())
 				a_val.reset(l_pVal);
@@ -101,7 +101,7 @@ struct CDeserializer<std::shared_ptr<T>>
 
 		try
 		{
-			Deserialize(a_data, l_pVal);
+			axon::serialization::Deserialize(a_data, l_pVal);
 
 			if (l_pVal != a_val.get())
 				a_val.reset(l_pVal);
