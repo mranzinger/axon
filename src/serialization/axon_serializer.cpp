@@ -45,7 +45,7 @@ size_t CalcEncodeSize(size_t a_size)
 {
 	size_t l_ret = 1;
 
-	for (; a_size > 0xFF; ++l_ret);
+	for (; a_size > 0x7f; ++l_ret, a_size >>= 7);
 
 	return l_ret;
 }
@@ -543,6 +543,9 @@ void WriteHeader(char*& a_buff, const MasterContext& a_mc)
 	WriteValue(a_buff, VERSION);
 
 	EncodeSize(a_buff, a_mc.NameMap.size());
+
+	if (a_mc.NameMap.empty())
+		return;
 
 	vector<record> l_sorted;
 	l_sorted.reserve(a_mc.NameMap.size());

@@ -14,6 +14,9 @@ namespace axon { namespace serialization {
 class CXmlSerializer
 	: public ASerializer
 {
+public:
+	virtual std::string FormatName() const override { return "xml"; }
+
 protected:
 	virtual std::string SerializeData(const AData &a_data) const override;
 

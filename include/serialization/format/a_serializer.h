@@ -22,6 +22,8 @@ public:
 
 	virtual ~ASerializer();
 
+	virtual std::string FormatName() const = 0;
+
 	template<typename T>
 	std::string Serialize(const T &a_val) const
 	{

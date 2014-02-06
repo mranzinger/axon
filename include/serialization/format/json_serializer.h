@@ -15,6 +15,9 @@ namespace axon { namespace serialization {
 class CJsonSerializer
 	: public ASerializer
 {
+public:
+	virtual std::string FormatName() const override { return "json"; }
+
 protected:
 	virtual std::string SerializeData(const AData &a_data) const override;
 

@@ -9,6 +9,7 @@
 
 #include "serialization/format/json_serializer.h"
 #include "serialization/format/xml_serializer.h"
+#include "serialization/format/axon_serializer.h"
 
 using namespace std;
 using namespace axon::serialization;
@@ -28,10 +29,13 @@ void BindStruct(Binder &a_binder, D &a_value)
 	a_binder("f", a_value.f)("g", a_value.g)("h", a_value.h)("i", a_value.i)("j", a_value.j);
 };
 
-struct E { };
+struct E
+{
+	string val;
+};
 
-ostream &operator<<(ostream &a, const E &) { return a << "Foo"; }
-istream &operator>>(istream &a, E&) { return a; }
+ostream &operator<<(ostream &a, const E &e) { return a << e.val; }
+istream &operator>>(istream &a, E&e) { return a >> e.val; }
 
 struct some_struct
 {
@@ -52,24 +56,32 @@ void test(const ASerializer &a_ser, const T &a_val)
 {
 	string l_enc = a_ser.Serialize(a_val);
 
-	cout << l_enc << endl;
+	cout << "Format: " << a_ser.FormatName() << endl;
+	cout << "Encoded Size: " << l_enc.size() << endl;
+	//cout << l_enc << endl;
 
 	T l_tmp;
 
 	a_ser.Deserialize(l_enc, l_tmp);
 
-	//cout << "Are Same? " << (a_val == l_tmp) << endl << endl;
+	string l_enc2 = a_ser.Serialize(l_tmp);
+
+	cout << "Are Same? " << boolalpha << (l_enc == l_enc2) << endl << endl;
 }
 
 int main(int argc, char *argv[])
 {
-	map<int, string> l_map1{ { 0, "foo" }, { 1, "bar" }, { 2, "baz" } };
+	//map<int, string> l_map1{ { 0, "foo" }, { 1, "bar" }, { 2, "baz" } };
 
-	test(CJsonSerializer(), l_map1);
-	test(CXmlSerializer(), l_map1);
+	vector<double> l_vec(10000);
+
+	test(CJsonSerializer(), l_vec);
+	test(CXmlSerializer(), l_vec);
+	test(CAxonSerializer(), l_vec);
 
 	test(CJsonSerializer(), some_struct());
 	test(CXmlSerializer(), some_struct());
+	test(CAxonSerializer(), some_struct());
 
 	return 0;
 }

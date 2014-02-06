@@ -15,6 +15,8 @@ class CAxonSerializer
 	: public ASerializer
 {
 public:
+	virtual std::string FormatName() const override { return "axon"; }
+
 	virtual size_t CalcSize(const AData &a_data) const override;
 
 	virtual size_t SerializeInto(const AData &a_data, char *a_buffer, size_t a_bufferSize) const override;
