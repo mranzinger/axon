@@ -20,7 +20,7 @@ size_t ASerializer::CalcSize(const AData &a_data) const
 	return SerializeData(a_data).size();
 }
 
-size_t ASerializer::SerializeInto(const AData &a_data, char *a_buffer, size_t a_bufferSize)
+size_t ASerializer::SerializeInto(const AData &a_data, char *a_buffer, size_t a_bufferSize) const
 {
 	auto l_str = SerializeData(a_data);
 

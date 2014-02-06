@@ -49,6 +49,8 @@ public:
 	util::CBuffer &GetBuffer() { return m_buffer; }
 	const util::CBuffer &GetBuffer() const { return m_buffer; }
 
+	size_t BufferSize() const { return m_buffer.Size(); }
+
 	bool Compress() const { return m_compress; }
 	void SetCompress(bool a_val) { m_compress = a_val; }
 

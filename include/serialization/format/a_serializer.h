@@ -57,7 +57,7 @@ public:
 	 * The return value is the size of the stored data, or the required size of
 	 * a_buffer if 'return > a_bufferSize'
 	 */
-	virtual size_t SerializeInto(const AData &a_data, char *a_buffer, size_t a_bufferSize);
+	virtual size_t SerializeInto(const AData &a_data, char *a_buffer, size_t a_bufferSize) const;
 
 
 

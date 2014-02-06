@@ -12,6 +12,7 @@
 
 #include "data_type.h"
 #include "serialization_context.h"
+#include "i_data_context.h"
 
 namespace axon { namespace serialization {
 
@@ -30,11 +31,14 @@ class AData
 private:
 	const DataType m_type;
 	CSerializationContext m_context;
+	mutable IDataContext::Ptr m_dataContext;
 
 public:
 	typedef std::unique_ptr<AData> Ptr;
 
-	virtual ~AData() { }
+	virtual ~AData()
+	{
+	}
 
 	DataType Type() const { return m_type; }
 
@@ -76,6 +80,15 @@ public:
 		return l_ret;
 	}
 	std::string ToJsonString() const { return ToJsonString(0); }
+
+	IDataContext *GetDataContext() const
+	{
+		return m_dataContext.get();
+	}
+	void SetDataContext(IDataContext::Ptr a_context) const
+	{
+		m_dataContext = std::move(a_context);
+	}
 
 protected:
 	AData(DataType a_type) : m_type(a_type) { }

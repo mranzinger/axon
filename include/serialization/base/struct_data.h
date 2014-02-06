@@ -57,6 +57,8 @@ public:
 	TVec::iterator begin() { return m_props.begin(); }
 	TVec::const_iterator end() const { return m_props.end(); }
 	TVec::iterator end() { return m_props.end(); }
+	size_t size() const { return m_props.size(); }
+
 
 	ADATA_CASTER_FN_NOT_IMPL(SByte, sbyte);
 	ADATA_CASTER_FN_NOT_IMPL(UByte, ubyte);
