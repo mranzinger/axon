@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <string>
 
+#include "util/detail/sfinae_base.h"
+
 namespace axon { namespace serialization {
 
 typedef signed char sbyte;
@@ -33,22 +35,26 @@ enum class DataType : ubyte
 	Array = 13,
 	Buffer = 14,
 	Null = 15,
-	Bool = 16
+	Bool = 16,
+	PrimArray = 17
 };
 
 template<typename T>
-struct CDataTypeTraits
+struct CDataTypeTraits : util::detail::sfinae_base
 {
 	// The default data type is an opaque structure
 	static const DataType Type = DataType::Struct;
 	static const bool IsPrimitive = false;
+
+	typedef no is_primitive_type;
 };
 
 #define DTT(type, dataType) \
 	template<> \
-	struct CDataTypeTraits<type> { \
+	struct CDataTypeTraits<type> : util::detail::sfinae_base { \
 		static const DataType Type = DataType::dataType; \
 		static const bool IsPrimitive = true; \
+		typedef yes is_primitive_type; \
 	}
 
 DTT(sbyte, SByte);

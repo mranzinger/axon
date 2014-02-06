@@ -15,6 +15,7 @@
 #include "struct_data.h"
 #include "null_data.h"
 #include "buffer_data.h"
+#include "prim_array_data.h"
 
 #include "util/or.h"
 #include "util/can_stream_out.h"

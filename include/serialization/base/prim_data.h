@@ -71,6 +71,12 @@ struct CPrimCaster<std::string, std::string>
 	}
 };
 
+template<>
+struct CPrimCaster<const char *, std::string>
+	: CPrimCaster<std::string, std::string>
+{
+};
+
 template<typename B, typename A>
 auto cast_to(const A &a_val) -> decltype(CPrimCaster<A, B>::Get(a_val))
 {

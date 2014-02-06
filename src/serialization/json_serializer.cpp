@@ -84,6 +84,27 @@ void WriteArray(rapidjson::Document &a_doc, rapidjson::Value &a_jsVal, const CAr
 	}
 }
 
+void WritePrimArray(rapidjson::Document &a_doc, rapidjson::Value &a_jsVal, const APrimArrayDataBase &a_data)
+{
+	a_jsVal.SetObject();
+	a_jsVal.AddMember("_t", "_prim", a_doc.GetAllocator());
+	a_jsVal.AddMember("_it", (int)a_data.InnerType(), a_doc.GetAllocator());
+
+	auto l_reg = a_data.ToRegArray();
+
+	rapidjson::Value l_arr(rapidjson::kArrayType);
+
+	for (const auto &val : *l_reg)
+	{
+		rapidjson::Value l_val;
+		WriteValue(a_doc, l_val, *val);
+
+		l_arr.PushBack(l_val, a_doc.GetAllocator());
+	}
+
+	a_jsVal.AddMember("_v", l_arr, a_doc.GetAllocator());
+}
+
 void WriteBuffer(rapidjson::Document &a_doc, rapidjson::Value &a_jsVal, const CBufferData &a_data)
 {
 	a_jsVal.SetObject();
@@ -149,6 +170,9 @@ void WriteValue(rapidjson::Document &a_doc, rapidjson::Value &a_jsVal, const ADa
 	case DataType::Null:
 		a_jsVal.SetNull();
 		break;
+	case DataType::PrimArray:
+		WritePrimArray(a_doc, a_jsVal, static_cast<const APrimArrayDataBase &>(a_data));
+		break;
 
 	default:
 		throw std::runtime_error("Unsupported data type.");
@@ -208,6 +232,76 @@ AData::Ptr ReadBuffer(const rapidjson::Document& a_doc, const rapidjson::Value& 
 	return AData::Ptr(new CBufferData(std::move(l_buff), l_compressed, a_context));
 }
 
+AData::Ptr ReadArray(const rapidjson::Document& a_doc, const rapidjson::Value& a_jsVal, const CSerializationContext &a_context)
+{
+	CArrayData::Ptr l_ret(new CArrayData(a_context));
+
+	for (auto iter = a_jsVal.Begin(), end = a_jsVal.End(); iter != end; ++iter)
+	{
+		l_ret->Add(ReadValue(a_doc, *iter, a_context));
+	}
+
+	return std::move(l_ret);
+}
+
+template<typename T>
+APrimArrayDataBase::Ptr ReadPrimArrayImpl(const rapidjson::Document &a_doc, const rapidjson::Value &a_jsVal, const CSerializationContext &a_context)
+{
+	typename CPrimArrayData<T>::Ptr l_ret(new CPrimArrayData<T>(a_context));
+
+	auto l_arr = GetMemVal(a_jsVal, "_v");
+
+	for (auto iter = l_arr->Begin(), end = l_arr->End(); iter != end; ++iter)
+	{
+		switch (iter->GetType())
+		{
+		case rapidjson::kFalseType:
+			l_ret->Add(cast_to<T>(false));
+			break;
+		case rapidjson::kTrueType:
+			l_ret->Add(cast_to<T>(true));
+			break;
+		case rapidjson::kNumberType:
+			l_ret->Add(cast_to<T>(iter->GetDouble()));
+			break;
+		case rapidjson::kStringType:
+			l_ret->Add(cast_to<T>(iter->GetString()));
+			break;
+		default:
+			throw std::runtime_error("Unsupported primitive type.");
+		}
+	}
+
+	return std::move(l_ret);
+}
+
+AData::Ptr ReadPrimArray(const rapidjson::Document &a_doc, const rapidjson::Value &a_jsVal, const CSerializationContext &a_context)
+{
+#define READ_PRIM(name, type) \
+	case DataType::name: \
+		return ReadPrimArrayImpl<type>(a_doc, a_jsVal, a_context)
+
+	DataType l_innerType = (DataType)GetMemVal(a_jsVal, "_it")->GetInt();
+
+	switch (l_innerType)
+	{
+	READ_PRIM(SByte, signed char);
+	READ_PRIM(UByte, unsigned char);
+	READ_PRIM(Short, short);
+	READ_PRIM(UShort, unsigned short);
+	READ_PRIM(Int, int);
+	READ_PRIM(UInt, unsigned int);
+	READ_PRIM(Long, long long);
+	READ_PRIM(ULong, unsigned long);
+	READ_PRIM(Float, float);
+	READ_PRIM(Double, double);
+	READ_PRIM(Bool, bool);
+	READ_PRIM(String, std::string);
+	}
+
+#undef READ_PRIM
+}
+
 AData::Ptr ReadObject(const rapidjson::Document& a_doc, const rapidjson::Value& a_jsVal, const CSerializationContext &a_context)
 {
 	const rapidjson::Value *l_typeVal = GetMemVal(a_jsVal, "_t", false);
@@ -217,6 +311,10 @@ AData::Ptr ReadObject(const rapidjson::Document& a_doc, const rapidjson::Value& 
 		if (0 == strcmp(l_typeVal->GetString(), "_buffer"))
 		{
 			return ReadBuffer(a_doc, a_jsVal, a_context);
+		}
+		else if (0 == strcmp(l_typeVal->GetString(), "_prim"))
+		{
+			return ReadPrimArray(a_doc, a_jsVal, a_context);
 		}
 	}
 
@@ -232,17 +330,7 @@ AData::Ptr ReadObject(const rapidjson::Document& a_doc, const rapidjson::Value& 
 	return std::move(l_ret);
 }
 
-AData::Ptr ReadArray(const rapidjson::Document& a_doc, const rapidjson::Value& a_jsVal, const CSerializationContext &a_context)
-{
-	CArrayData::Ptr l_ret(new CArrayData(a_context));
 
-	for (auto iter = a_jsVal.Begin(), end = a_jsVal.End(); iter != end; ++iter)
-	{
-		l_ret->Add(ReadValue(a_doc, *iter, a_context));
-	}
-
-	return std::move(l_ret);
-}
 
 AData::Ptr ReadValue(const rapidjson::Document& a_doc, const rapidjson::Value& a_jsVal, const CSerializationContext &a_context)
 {

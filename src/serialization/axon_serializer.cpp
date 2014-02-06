@@ -372,6 +372,192 @@ AData::Ptr ReadArray(const char *&a_buff, const MasterContext &a_mc, const CSeri
 	return move(l_ret);
 }
 
+template<typename T>
+size_t p_CalcPrimArraySizeImpl(const CPrimArrayData<T> &a_data)
+{
+	size_t l_size = 0;
+
+	l_size += sizeof(T) * a_data.size(); // Elements
+
+	return l_size;
+}
+
+size_t p_CalcPrimArraySizeImpl(const CPrimArrayData<string> &a_data)
+{
+	size_t l_size = 0;
+
+	for (const string &l_val : a_data)
+	{
+		l_size += CalcValueSize(l_val);
+	}
+
+	return l_size;
+}
+
+size_t p_CalcPrimArraySize(const APrimArrayDataBase &a_data)
+{
+#define CALC_SIZE(name, type) \
+	case DataType::name: \
+		l_size += p_CalcPrimArraySizeImpl(static_cast<const CPrimArrayData<type> &>(a_data)); \
+		break
+
+	size_t l_size = 0;
+
+	l_size += sizeof(byte); // Write Mode
+	l_size += sizeof(byte); // Inner Type
+	l_size += CalcEncodeSize(a_data.Size()); // Number of elements
+
+	switch (a_data.InnerType())
+	{
+	CALC_SIZE(SByte, signed char);
+	CALC_SIZE(UByte, unsigned char);
+	CALC_SIZE(Short, short);
+	CALC_SIZE(UShort, unsigned short);
+	CALC_SIZE(Int, int);
+	CALC_SIZE(UInt, unsigned int);
+	CALC_SIZE(Long, long long);
+	CALC_SIZE(ULong, unsigned long);
+	CALC_SIZE(Float, float);
+	CALC_SIZE(Double, double);
+	CALC_SIZE(Bool, bool);
+	CALC_SIZE(String, string);
+
+	default:
+		throw runtime_error("Unsupported primitive type.");
+	}
+
+	return l_size;
+
+#undef CALC_SIZE
+}
+
+template<typename T>
+void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<T> &a_data)
+{
+	// Straight copy the primitive values into the output buffer
+	size_t l_size = sizeof(T) * a_data.size();
+	memcpy(a_buff, a_data.Data(), l_size);
+	a_buff += l_size;
+}
+
+// Need to specialize this because of the boneheaded decision to make vector<bool>
+// a bitset
+void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<bool> &a_data)
+{
+	for (bool l_b : a_data)
+	{
+		WriteValue(a_buff, l_b);
+	}
+}
+
+void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<string> &a_data)
+{
+	for (const string &l_val : a_data)
+	{
+		WriteValue(a_buff, l_val);
+	}
+}
+
+void WritePrimArray(char *&a_buff, const APrimArrayDataBase &a_data)
+{
+#define WRITE_PRIM(name, type) \
+	case DataType::name: \
+		WritePrimArrayImpl(a_buff, static_cast<const CPrimArrayData<type> &>(a_data)); \
+		break
+
+	WriteValue(a_buff, byte(0)); // Write Mode
+	WriteValue(a_buff, (byte)a_data.InnerType());
+	EncodeSize(a_buff, a_data.Size());
+
+	switch (a_data.InnerType())
+	{
+	WRITE_PRIM(SByte, signed char);
+	WRITE_PRIM(UByte, unsigned char);
+	WRITE_PRIM(Short, short);
+	WRITE_PRIM(UShort, unsigned short);
+	WRITE_PRIM(Int, int);
+	WRITE_PRIM(UInt, unsigned int);
+	WRITE_PRIM(Long, long long);
+	WRITE_PRIM(ULong, unsigned long);
+	WRITE_PRIM(Float, float);
+	WRITE_PRIM(Double, double);
+	WRITE_PRIM(Bool, bool);
+	WRITE_PRIM(String, string);
+
+	default:
+		throw runtime_error("Unsupported primitive type.");
+	}
+
+#undef WRITE_PRIM
+}
+
+template<typename T>
+void ReadPrimArrayImpl2(const char *&a_buff, CPrimArrayData<T> &a_data, size_t a_size)
+{
+	const T *l_t = reinterpret_cast<const T *>(a_buff);
+
+	auto l_end = l_t + a_size;
+
+	a_data.Import(l_t, l_end);
+
+	a_buff = reinterpret_cast<const char *>(l_end);
+}
+
+void ReadPrimArrayImpl2(const char *&a_buff, CPrimArrayData<string> &a_data, size_t a_size)
+{
+	for (size_t i = 0; i < a_size; ++i)
+	{
+		string l_str;
+		ReadValue(a_buff, l_str);
+
+		a_data.Add(move(l_str));
+	}
+}
+
+template<typename T>
+AData::Ptr ReadPrimArrayImpl(const char *&a_buff, size_t a_size, const CSerializationContext &a_context)
+{
+	typename CPrimArrayData<T>::Ptr l_ret(new CPrimArrayData<T>(a_context));
+	ReadPrimArrayImpl2(a_buff, *l_ret, a_size);
+	return move(l_ret);
+}
+
+AData::Ptr ReadPrimArray(const char *&a_buff, const CSerializationContext &a_context)
+{
+	if (0 != ReadValue<byte>(a_buff))
+		throw runtime_error("Unsupported primitive array write mode.");
+
+	DataType l_inner = (DataType)ReadValue<byte>(a_buff);
+
+	size_t l_numElems = DecodeSize(a_buff);
+
+
+#define READ_PRIM(name, type) \
+	case DataType::name: \
+		return ReadPrimArrayImpl<type>(a_buff, l_numElems, a_context);
+
+	switch (l_inner)
+	{
+	READ_PRIM(SByte, signed char);
+	READ_PRIM(UByte, unsigned char);
+	READ_PRIM(Short, short);
+	READ_PRIM(UShort, unsigned short);
+	READ_PRIM(Int, int);
+	READ_PRIM(UInt, unsigned int);
+	READ_PRIM(Long, long long);
+	READ_PRIM(ULong, unsigned long);
+	READ_PRIM(Float, float);
+	READ_PRIM(Double, double);
+	READ_PRIM(Bool, bool);
+	READ_PRIM(String, string);
+
+	}
+
+	throw runtime_error("Unsupported primitive type.");
+
+#undef READ_PRIM
+}
+
 size_t p_CalcSize(const AData& a_data, MasterContext& a_mc, DataType a_knownType)
 {
 #define PRIM_SIZE(name, type) \
@@ -417,6 +603,10 @@ size_t p_CalcSize(const AData& a_data, MasterContext& a_mc, DataType a_knownType
 
 	case DataType::Buffer:
 		l_size += p_CalcBufferSize(static_cast<const CBufferData &>(a_data));
+		break;
+
+	case DataType::PrimArray:
+		l_size += p_CalcPrimArraySize(static_cast<const APrimArrayDataBase &>(a_data));
 		break;
 	}
 
@@ -468,6 +658,13 @@ void WriteData(char*& a_buff, const AData& a_data, const MasterContext& a_mc, Da
 	case DataType::Buffer:
 		WriteBuffer(a_buff, static_cast<const CBufferData &>(a_data));
 		break;
+
+	case DataType::PrimArray:
+		WritePrimArray(a_buff, static_cast<const APrimArrayDataBase &>(a_data));
+		break;
+
+	default:
+		throw runtime_error("Unknown data type.");
 	}
 
 #undef WRITE_PRIM
@@ -510,6 +707,9 @@ AData::Ptr ReadData(const char*& a_buff, const MasterContext& a_mc, const CSeria
 
 	case DataType::Buffer:
 		return ReadBuffer(a_buff, a_context);
+
+	case DataType::PrimArray:
+		return ReadPrimArray(a_buff, a_context);
 	}
 
 	throw runtime_error("Unsupported data type.");

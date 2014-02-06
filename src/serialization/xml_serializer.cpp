@@ -66,6 +66,20 @@ void WriteArray(xml_node a_node, const CArrayData &a_data)
 	}
 }
 
+void WritePrimArray(xml_node a_node, const APrimArrayDataBase &a_data)
+{
+	a_node.append_attribute("_t").set_value("PrimArray");
+	a_node.append_attribute("_it").set_value((int)a_data.InnerType());
+
+	auto l_reg = a_data.ToRegArray();
+
+	for (const auto &l_val : *l_reg)
+	{
+		auto l_child = a_node.append_child("V");
+		l_child.append_attribute("val").set_value(l_val->ToString().c_str());
+	}
+}
+
 void WriteBuffer(xml_node a_node, const CBufferData &a_data)
 {
 	a_node.append_attribute("_t").set_value("Buffer");
@@ -118,6 +132,10 @@ void WriteValue(xml_node a_node, const AData& a_data)
 		WriteBuffer(a_node, static_cast<const CBufferData &>(a_data));
 		break;
 
+	case DataType::PrimArray:
+		WritePrimArray(a_node, static_cast<const APrimArrayDataBase &>(a_data));
+		break;
+
 	default:
 		throw std::runtime_error("Unsupported data type.");
 	}
@@ -152,6 +170,48 @@ AData::Ptr ReadArray(xml_node a_node, const CSerializationContext &a_context)
 	}
 
 	return move(l_ret);
+}
+
+template<typename T>
+APrimArrayDataBase::Ptr ReadPrimArrayImpl(xml_node a_node, const CSerializationContext &a_context)
+{
+	typename CPrimArrayData<T>::Ptr l_ret(new CPrimArrayData<T>(a_context));
+
+	for (xml_node l_child : a_node)
+	{
+		l_ret->Add(cast_to<T>(l_child.first_attribute().value()));
+	}
+
+	return move(l_ret);
+}
+
+AData::Ptr ReadPrimArray(xml_node a_node, const CSerializationContext &a_context)
+{
+#define READ_PRIM(name, type) \
+	case DataType::name: \
+		return ReadPrimArrayImpl<type>(a_node, a_context)
+
+	DataType l_innerType = (DataType)a_node.attribute("_it").as_int();
+
+	switch (l_innerType)
+	{
+	READ_PRIM(SByte, signed char);
+	READ_PRIM(UByte, unsigned char);
+	READ_PRIM(Short, short);
+	READ_PRIM(UShort, unsigned short);
+	READ_PRIM(Int, int);
+	READ_PRIM(UInt, unsigned int);
+	READ_PRIM(Long, long long);
+	READ_PRIM(ULong, unsigned long);
+	READ_PRIM(Float, float);
+	READ_PRIM(Double, double);
+	READ_PRIM(Bool, bool);
+	READ_PRIM(String, string);
+	}
+
+	throw runtime_error("Unsupported primitive type.");
+
+#undef READ_PRIM
 }
 
 AData::Ptr ReadBuffer(xml_node a_node, const CSerializationContext &a_context)
@@ -212,6 +272,8 @@ AData::Ptr ReadValue(xml_node a_node, const CSerializationContext& a_context)
 		return ReadArray(a_node, a_context);
 	if (0 == strcmp(l_type, "Buffer"))
 		return ReadBuffer(a_node, a_context);
+	if (0 == strcmp(l_type, "PrimArray"))
+		return ReadPrimArray(a_node, a_context);
 
 	throw std::runtime_error("Unsupported data type.");
 }

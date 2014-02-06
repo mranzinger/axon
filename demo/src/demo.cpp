@@ -58,7 +58,9 @@ void test(const ASerializer &a_ser, const T &a_val)
 
 	cout << "Format: " << a_ser.FormatName() << endl;
 	cout << "Encoded Size: " << l_enc.size() << endl;
-	//cout << l_enc << endl;
+
+	if (l_enc.size() < 300)
+		cout << l_enc << endl;
 
 	T l_tmp;
 
@@ -73,15 +75,15 @@ int main(int argc, char *argv[])
 {
 	//map<int, string> l_map1{ { 0, "foo" }, { 1, "bar" }, { 2, "baz" } };
 
-	vector<double> l_vec(10000);
+	vector<double> l_vec(200000000);
 
-	test(CJsonSerializer(), l_vec);
-	test(CXmlSerializer(), l_vec);
+	//test(CJsonSerializer(), l_vec);
+	//test(CXmlSerializer(), l_vec);
 	test(CAxonSerializer(), l_vec);
 
-	test(CJsonSerializer(), some_struct());
-	test(CXmlSerializer(), some_struct());
-	test(CAxonSerializer(), some_struct());
+	//test(CJsonSerializer(), some_struct());
+	//test(CXmlSerializer(), some_struct());
+	//test(CAxonSerializer(), some_struct());
 
 	return 0;
 }

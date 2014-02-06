@@ -36,11 +36,30 @@ void SerializeColl(CArrayData &a_data, const CollType &a_coll, const CSerializat
 }
 
 template<typename CollType>
-CArrayData::Ptr SerializeColl(const CollType &a_coll, const CSerializationContext &a_context)
+AData::Ptr SerializeCollImpl(const CollType &a_coll, const CSerializationContext &a_context, util::detail::sfinae_base::no)
 {
 	CArrayData::Ptr l_ret(new CArrayData(a_context));
 	SerializeColl(*l_ret, a_coll, a_context);
 	return std::move(l_ret);
+}
+
+template<typename CollType>
+AData::Ptr SerializeCollImpl(const CollType &a_coll,
+		const CSerializationContext &a_context, util::detail::sfinae_base::yes)
+{
+	typedef typename CollType::value_type value_type;
+	typedef CPrimArrayData<value_type> data_type;
+	typedef typename data_type::Ptr data_ptr;
+
+	data_ptr l_ret(new data_type(a_context));
+	l_ret->Import(a_coll);
+	return std::move(l_ret);
+}
+
+template<typename CollType>
+AData::Ptr SerializeColl(const CollType &a_coll, const CSerializationContext &a_context)
+{
+	return SerializeCollImpl(a_coll, a_context, typename CDataTypeTraits<typename CollType::value_type>::is_primitive_type());
 }
 
 template<typename T>
