@@ -57,7 +57,7 @@ struct CPrimitiveDeserializer
 		CSpecDeserializer<T,
 			util::exp_or<
 				!std::is_same<detail::unspecialized, decltype(ReadStruct(*(CStructReader*)nullptr, *(T*)nullptr))>::value,
-				!std::is_same<detail::unspecialized, decltype(BindStruct(*(CStructReader*)nullptr, *(T*)nullptr))>::value
+				!std::is_same<detail::unspecialized, decltype(BindStruct(*(CStructBinder*)nullptr, *(T*)nullptr))>::value
 				>::Value>::Deserialize(a_data, a_val);
 	}
 };

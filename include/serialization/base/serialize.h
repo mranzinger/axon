@@ -89,7 +89,7 @@ struct CPrimitiveSerializer
 		return CSpecSerializer<T,
 				util::exp_or<
 					!std::is_same<detail::unspecialized, decltype(WriteStruct(*(CStructWriter*)nullptr, *(T*)nullptr))>::value,
-					!std::is_same<detail::unspecialized, decltype(BindStruct(*(CStructWriter*)nullptr, *(T*)nullptr))>::value
+					!std::is_same<detail::unspecialized, decltype(BindStruct(*(CStructBinder*)nullptr, *(T*)nullptr))>::value
 					>::Value>::Get(a_val, a_context);
 	}
 };

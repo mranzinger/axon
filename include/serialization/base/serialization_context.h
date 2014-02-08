@@ -85,29 +85,44 @@ public:
 	}
 };
 
-template<SerializationFlags ...Flags>
 class CSerFlagScope
 {
 private:
 	const CSerializationContext *m_context;
+	SerializationFlags m_flags;
 
 public:
-	CSerFlagScope(const CSerializationContext &a_context)
-		: m_context(&a_context)
+	template<typename ...Flags>
+	CSerFlagScope(const CSerializationContext &a_context, Flags ...a_flags)
+		: m_context(&a_context), m_flags(SerializationFlags::None)
 	{
-		m_context->ToggleFlags(Flags...);
+		AppendFlags(a_flags...);
+
+		m_context->ToggleFlags(m_flags);
 	}
 	~CSerFlagScope()
 	{
-		m_context->ToggleFlags(Flags...);
+		m_context->ToggleFlags(m_flags);
+	}
+
+	void AppendFlags() { }
+
+	template<typename ...Flags>
+	void AppendFlags(SerializationFlags a_flag, Flags ...a_rest)
+	{
+		m_flags = (SerializationFlags)(uint32_t(a_flag) ^ uint32_t(m_flags));
+
+		AppendFlags(a_rest...);
 	}
 };
 
-template<SerializationFlags ...Flags>
-CSerFlagScope<Flags...> SetSerFlags(const CSerializationContext &a_context)
+template<typename ...Flags>
+CSerFlagScope SetSerFlags(const CSerializationContext &a_context, SerializationFlags a_first, Flags ...a_flags)
 {
-	return CSerFlagScope<Flags...>(a_context);
+	return CSerFlagScope(a_context, a_first, a_flags...);
 }
+
+inline int SetSerFlags(const CSerializationContext &a_context) { return 42; }
 
 } }
 

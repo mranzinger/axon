@@ -17,39 +17,20 @@ using namespace axon::serialization;
 struct D
 {
 	float f;
-	int *g = nullptr;
-	std::vector<D*> h;
-	std::map<int, D*> i;
+	unique_ptr<int> g;
+	vector<unique_ptr<D>> h;
+	map<int, unique_ptr<D>> i;
 	axon::util::CBuffer j;
 };
 
-template<typename Binder>
-void BindStruct(Binder &a_binder, D &a_value)
-{
-	a_binder("f", a_value.f)("g", a_value.g)("h", a_value.h)("i", a_value.i)("j", a_value.j);
-};
 
-struct E
+void BindStruct(const CStructBinder &a_binder, D &a_val)
 {
-	string val;
-};
-
-ostream &operator<<(ostream &a, const E &e) { return a << e.val; }
-istream &operator>>(istream &a, E&e) { return a >> e.val; }
-
-struct some_struct
-{
-	int a, b;
-	std::string c;
-	D d;
-	E e;
-};
-
-template<typename Binder>
-void BindStruct(Binder &w, some_struct &s)
-{
-	w("a", s.a)("b", s.b)("c", s.c)("d", s.d)("e", s.e);
+	a_binder("f", a_val.f)("g", a_val.g)
+			("h", a_val.h)("i", a_val.i)
+			("j", a_val.j);
 }
+
 
 template<typename T>
 void test(const ASerializer &a_ser, const T &a_val)
@@ -73,6 +54,8 @@ void test(const ASerializer &a_ser, const T &a_val)
 
 int main(int argc, char *argv[])
 {
+	cout << sizeof(vector<double>) << endl;
+
 	//map<int, string> l_map1{ { 0, "foo" }, { 1, "bar" }, { 2, "baz" } };
 
 	vector<double> l_vec(200000000);
@@ -83,7 +66,7 @@ int main(int argc, char *argv[])
 
 	//test(CJsonSerializer(), some_struct());
 	//test(CXmlSerializer(), some_struct());
-	//test(CAxonSerializer(), some_struct());
+	test(CAxonSerializer(), D());
 
 	return 0;
 }

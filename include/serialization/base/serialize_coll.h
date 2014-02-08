@@ -17,7 +17,7 @@
 namespace axon { namespace serialization {
 
 template<typename Key, typename Value>
-void WriteStruct(CStructWriter &a_writer, const std::pair<Key, Value> &a_val)
+void WriteStruct(const CStructWriter &a_writer, const std::pair<Key, Value> &a_val)
 {
 	a_writer("k", a_val.first)("v", a_val.second);
 }
