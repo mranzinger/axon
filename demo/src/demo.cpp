@@ -7,30 +7,36 @@
 #include <iostream>
 #include <assert.h>
 
-#include "serialization/format/json_serializer.h"
-#include "serialization/format/xml_serializer.h"
-#include "serialization/format/axon_serializer.h"
+#include "serialization/master.h"
 
 using namespace std;
 using namespace axon::serialization;
 
-struct D
+
+struct CBase
 {
-	float f;
-	unique_ptr<int> g;
-	vector<unique_ptr<D>> h;
-	map<int, unique_ptr<D>> i;
-	axon::util::CBuffer j;
+	virtual ~CBase() { }
+
+	int a = 42;
 };
 
-
-void BindStruct(const CStructBinder &a_binder, D &a_val)
+void BindStruct(const CStructBinder &a_binder, CBase &a_val)
 {
-	a_binder("f", a_val.f)("g", a_val.g)
-			("h", a_val.h)("i", a_val.i)
-			("j", a_val.j);
+	a_binder("a", a_val.a);
 }
 
+struct CDerived
+	: CBase
+{
+	std::string b = "Hello World";
+};
+
+void BindStruct(const CStructBinder &a_binder, CDerived &a_val)
+{
+	BindStruct(a_binder, (CBase&)a_val);
+
+	a_binder("b", a_val.b);
+}
 
 template<typename T>
 void test(const ASerializer &a_ser, const T &a_val)
@@ -58,15 +64,13 @@ int main(int argc, char *argv[])
 
 	//map<int, string> l_map1{ { 0, "foo" }, { 1, "bar" }, { 2, "baz" } };
 
-	vector<double> l_vec(200000000);
+	vector<double> l_vec(20000);
 
 	//test(CJsonSerializer(), l_vec);
 	//test(CXmlSerializer(), l_vec);
 	test(CAxonSerializer(), l_vec);
 
-	//test(CJsonSerializer(), some_struct());
-	//test(CXmlSerializer(), some_struct());
-	test(CAxonSerializer(), D());
+	CPolyManager::Register<CBase, CDerived>();
 
 	return 0;
 }

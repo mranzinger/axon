@@ -20,6 +20,7 @@
 #include "util/can_stream_in.h"
 
 #include "struct_binder.h"
+#include "poly_manager.h"
 
 namespace axon { namespace serialization {
 

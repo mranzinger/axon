@@ -42,6 +42,8 @@ auto ReadStruct(const CStructReader &a_reader, T &a_val) -> decltype(BindStruct(
 
 template<typename T>
 AData::Ptr Serialize(const T &, const CSerializationContext &);
+template<typename T>
+T Deserialize(const AData &a_data);
 
 class CStructWriter
 {
@@ -72,6 +74,12 @@ private:
 public:
 	CStructReader(const CStructData *a_data)
 		: m_data(a_data) { }
+
+	template<typename T>
+	T GetPrimitive(const std::string &a_name) const
+	{
+		return Deserialize<T>(*m_data->Get(a_name));
+	}
 
 	template<typename T, typename ...Flags>
 	const CStructReader &operator()(const std::string &a_name, T &a_val, Flags ...a_flags) const
