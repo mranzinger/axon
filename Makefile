@@ -38,8 +38,8 @@ SRC = $(UTIL_SRC) $(SER_SRC) $(COM_SRC)
 OBJS = $(UTIL_OBJS) $(SER_OBJS) $(COM_OBJS)
 OBJS_D = $(UTIL_OBJS_D) $(SER_OBJS_D) $(COM_OBJS_D)
 
-LIBS = lib/libaxutil.a lib/libaxser.a
-LIBS_D = lib/libaxutild.a lib/libaxserd.a
+LIBS = lib/libaxutil.a lib/libaxser.a lib/libaxcomm.a
+LIBS_D = lib/libaxutild.a lib/libaxserd.a lib/libaxcommd.a
 
 EXES = demo/demo_debug demo/demo_release
 
@@ -79,10 +79,29 @@ $(OBJ_SER)/%.o: $(SRC_SER)/%.cpp
 			-Lthirdparty/pugixml/lib \
 			-lpugixml
 
+$(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
+	$(CC) $(DFLAGS) -c $< -o $@ \
+			-Iinclude \
+			-Iinclude/communication \
+			-Ithirdparty/include \
+			-Lthirdparty/pugixml/lib \
+			-lpugixmld
+
+$(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
+	$(CC) $(RFLAGS) -c $< -o $@ \
+			-Iinclude \
+			-Iinclude/communication \
+			-Ithirdparty/include \
+			-Lthirdparty/pugixml/lib \
+			-lpugixml
+
 lib/libaxutild.a: $(UTIL_OBJS_D)
 	ar rvs $@ $^
 	
 lib/libaxserd.a: $(SER_OBJS_D)
+	ar rvs $@ $^
+	
+lib/libaxcommd.a: $(COM_OBJS_D)
 	ar rvs $@ $^
 
 lib/libaxutil.a: $(UTIL_OBJS)
@@ -90,20 +109,23 @@ lib/libaxutil.a: $(UTIL_OBJS)
 	
 lib/libaxser.a: $(SER_OBJS)
 	ar rvs $@ $^
+	
+lib/libaxcomm.a: $(COM_OBJS)
+	ar rvs $@ $^
 
 demo/demo_debug: $(DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
-		-laxserd -laxutild -lpugixmld
+		-laxserd -laxutild -laxcommd -lpugixmld
 
 demo/demo_release: $(DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
-		-laxser -laxutil -lpugixml
+		-laxser -laxutil -laxcomm -lpugixml
 
 clean:
 	rm -rf lib
