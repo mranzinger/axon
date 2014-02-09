@@ -3,7 +3,10 @@ FLAGS=-std=gnu++11 -g
 DFLAGS=$(FLAGS)
 RFLAGS=-O3 $(FLAGS)
 
+INC_ROOT = include
 SRC_ROOT = src
+
+INC_ALL = $(wildcard $(INC_ROOT)/*.h)
 
 SRC_UTIL = $(SRC_ROOT)/util
 SRC_SER = $(SRC_ROOT)/serialization
@@ -44,9 +47,9 @@ EXES = demo/demo_debug demo/demo_release
 
 all: debug release
 
-debug: setup $(OBJS_D) $(LIBS_D) demo/demo_debug
+debug: setup $(OBJS_D) $(LIBS_D) demo/demo_debug $(INC_ALL)
 
-release: setup $(OBJS) $(LIBS) demo/demo_release
+release: setup $(OBJS) $(LIBS) demo/demo_release $(INC_ALL)
 
 setup:
 	mkdir -p lib

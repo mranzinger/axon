@@ -59,12 +59,36 @@ struct CInstDeserializer<T, true>
 	}
 };
 
-template<typename T>
-struct CDeserializer<T*>
-	: CInstDeserializer<T,
+template<typename T, bool IsPoly>
+struct CPolyDeserializer
+	:  CInstDeserializer<T,
 	  	  util::exp_and<
 	  	  	  !std::is_abstract<T>::value,
 	  	  	  std::is_default_constructible<T>::value>::Value>
+{
+
+};
+
+template<typename T>
+struct CPolyDeserializer<T, true>
+{
+	static void Deserialize(const AData &a_data, T *&a_val)
+	{
+		if (a_data.Type() != DataType::Struct)
+			throw std::runtime_error("There is a mismatch between the serialization and deserialization mechanisms."
+					" Ensure that the same method is used both ways.");
+
+		auto l_struct = static_cast<const CStructData *>(&a_data);
+
+		CStructReader l_reader(l_struct);
+
+		CPolymorphicBinder<T>::Read(l_reader, a_val);
+	}
+};
+
+template<typename T>
+struct CDeserializer<T*>
+	: CPolyDeserializer<T, CPolymorphicBinder<T>::specialized>
 {
 
 };

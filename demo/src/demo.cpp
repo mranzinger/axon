@@ -25,11 +25,15 @@ void BindStruct(const CStructBinder &a_binder, CBase &a_val)
 	a_binder("a", a_val.a);
 }
 
+AXON_SERIALIZE_BASE_TYPE(CBase);
+
 struct CDerived
 	: CBase
 {
 	std::string b = "Hello World";
 };
+
+AXON_SERIALIZE_DERIVED_TYPE(CBase, CDerived, "Derived");
 
 void BindStruct(const CStructBinder &a_binder, CDerived &a_val)
 {
@@ -70,7 +74,7 @@ int main(int argc, char *argv[])
 	//test(CXmlSerializer(), l_vec);
 	test(CAxonSerializer(), l_vec);
 
-	CPolyManager::Register<CBase, CDerived>();
+	test(CAxonSerializer(), shared_ptr<CBase>(new CDerived));
 
 	return 0;
 }

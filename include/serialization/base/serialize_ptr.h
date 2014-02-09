@@ -11,9 +11,8 @@
 
 namespace axon { namespace serialization {
 
-// Create a partial specialization that catches pointers
-template<typename T>
-struct CSerializer<T*>
+template<typename T, bool IsPoly>
+struct CPolySerializer
 {
 	static AData::Ptr Get(const T *a_val, const CSerializationContext &a_context)
 	{
@@ -25,12 +24,38 @@ struct CSerializer<T*>
 };
 
 template<typename T>
+struct CPolySerializer<T, true>
+{
+	static AData::Ptr Get(const T *a_val, const CSerializationContext &a_context)
+	{
+		if (a_val)
+		{
+			CStructData::Ptr l_ret(new CStructData(a_context));
+			CStructWriter l_writer(l_ret.get());
+
+			CPolymorphicBinder<T>::Write(l_writer, a_val);
+
+			return std::move(l_ret);
+		}
+		else
+			return CNullData::Create(a_context);
+	}
+};
+
+// Create a partial specialization that catches pointers
+template<typename T>
+struct CSerializer<T*>
+	: CPolySerializer<T, CPolymorphicBinder<T>::specialized>
+{
+};
+
+template<typename T>
 struct CSerializer<std::unique_ptr<T>>
 {
 	static AData::Ptr Get(const std::unique_ptr<T> &a_val, const CSerializationContext &a_context)
 	{
 		if (a_val)
-			return CSerializer<T>::Get(*a_val, a_context);
+			return CSerializer<T*>::Get(a_val.get(), a_context);
 		else
 			return CNullData::Create(a_context);
 	}
@@ -42,7 +67,7 @@ struct CSerializer<std::shared_ptr<T>>
 	static AData::Ptr Get(const std::shared_ptr<T> &a_val, const CSerializationContext &a_context)
 	{
 		if (a_val)
-			return CSerializer<T>::Get(*a_val, a_context);
+			return CSerializer<T*>::Get(a_val.get(), a_context);
 		else
 			return CNullData::Create(a_context);
 	}
