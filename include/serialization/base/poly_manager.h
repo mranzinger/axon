@@ -7,8 +7,10 @@
 #ifndef POLY_MANAGER_H_
 #define POLY_MANAGER_H_
 
+#include <memory>
 #include <typeindex>
 #include <unordered_map>
+#include <stdexcept>
 
 #include "struct_binder.h"
 
@@ -21,7 +23,7 @@ public:
 
 	virtual ~CPolyBase() { }
 
-	virtual AData::Ptr WriteStructV(const void *a_ptr) const = 0;
+	virtual void WriteStructV(const CStructWriter &a_writer, const void *a_ptr) const = 0;
 	virtual void ReadStructV(const CStructReader &a_reader, void *&a_ptr) const = 0;
 };
 
@@ -42,7 +44,7 @@ private:
 	}
 	virtual void ReadStructV(const CStructReader &a_reader, void *&a_ptr) const override
 	{
-		Base *a_base = nullptr;
+		Base *a_base = (Base*)a_ptr;
 		ReadStructB(a_reader, a_base);
 
 		a_ptr = a_base;
@@ -56,6 +58,8 @@ class CPolyImpl
 public:
 	typedef std::shared_ptr<CPolyImpl> Ptr;
 
+	virtual ~CPolyImpl() { }
+
 	virtual void WriteStructB(const CStructWriter &a_writer, const Base *a_ptr) const override
 	{
 		const Derived *a_der = dynamic_cast<const Derived *>(a_ptr);
@@ -68,7 +72,18 @@ public:
 	virtual void ReadStructB(const CStructReader &a_reader, Base *&a_ptr) const override
 	{
 		Derived *a_der = nullptr;
-		ReadStruct(a_reader, a_der);
+		if (a_ptr)
+		{
+			a_der = dynamic_cast<Derived*>(a_ptr);
+			if (!a_der)
+				throw std::runtime_error("Invalid default instantiation of pointer.");
+		}
+		else
+		{
+			a_der = new Derived{};
+		}
+
+		ReadStruct(a_reader, *a_der);
 
 		a_ptr = a_der;
 	}
@@ -88,9 +103,9 @@ public:
 	}
 
 	template<typename Base>
-	static AData::Ptr WriteStruct(const Base *a_base, const CSerializationContext &a_context)
+	static void WriteStruct(const CStructWriter &a_writer, const Base *a_base)
 	{
-		return p_GetInstance()->p_WriteStruct(a_base);
+		return p_GetInstance()->p_WriteStruct(a_writer, a_base);
 	}
 
 	template<typename Base>
@@ -118,7 +133,7 @@ private:
 	}
 
 	template<typename Base>
-	AData::Ptr p_WriteStruct(const Base *a_base, const CSerializationContext &a_context) const
+	void p_WriteStruct(const CStructWriter &a_writer, const Base *a_base) const
 	{
 		std::type_index idx(typeid(a_base));
 

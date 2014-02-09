@@ -1,5 +1,5 @@
 CC=g++
-FLAGS=-std=c++11 -g
+FLAGS=-std=gnu++11 -g
 DFLAGS=$(FLAGS)
 RFLAGS=-O3 $(FLAGS)
 
