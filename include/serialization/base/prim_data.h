@@ -112,10 +112,10 @@ public:
     }
 
 	const T &GetValue() const { return m_value; }
-	template<typename TT>
-	void SetValue(TT &&a_val)
+
+	void SetValue(T a_val)
 	{
-		m_value = std::forward<TT>(a_val);
+		m_value = std::move(a_val);
 	}
 
 
@@ -143,6 +143,9 @@ inline CPrimData<std::string>::Ptr MakePrim(const char *a_value, CSerializationC
 {
 	return CPrimData<std::string>::Ptr(new CPrimData<std::string>(a_value, std::move(a_context)));
 }
+
+typedef CPrimData<std::string> CStringData;
+typedef CPrimData<bool> CBoolData;
 
 } }
 

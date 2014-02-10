@@ -33,7 +33,7 @@ public:
 	enum Ownership
 	{
 		Unowned,
-		Owned
+		TakeOwnership
 	};
 
 	CBuffer()
@@ -42,7 +42,7 @@ public:
 
 	}
 	CBuffer(size_t a_bufSize)
-		: CBuffer(a_bufSize, new char[a_bufSize], Owned)
+		: CBuffer(a_bufSize, new char[a_bufSize], TakeOwnership)
 	{
 	}
 	CBuffer(size_t a_bufSize, char *a_buff, Ownership a_mode)
@@ -64,7 +64,7 @@ public:
 
 		try
 		{
-			Reset(a_bufSize, l_buf, Owned);
+			Reset(a_bufSize, l_buf, TakeOwnership);
 		}
 		catch (...)
 		{
@@ -87,7 +87,7 @@ public:
 			// then supply a deleter that does nothing
 			m_buff.reset(a_buff, [] (const char*) {});
 		}
-		else if (Owned == a_mode)
+		else if (TakeOwnership == a_mode)
 		{
 			m_buff.reset(a_buff, TDeleter());
 		}

@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <condition_variable>
+#include <functional>
 
 #include "util/buffer.h"
 
@@ -91,7 +92,7 @@ struct register_protocol
 	register_protocol(const std::string &protocolId)
 	{
 		IDataConnection::RegisterFactory(protocolId,
-			[] (const std::string &cStr)
+			[] (const std::string &cStr) -> IDataConnection::Ptr
 			{
 				IDataConnection::Ptr ret = std::make_shared<DataConnectionType>();
 

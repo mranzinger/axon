@@ -5,7 +5,7 @@
  *      Author: Mike
  */
 
-#include "communication/i_data_connection.h"
+#include "i_data_connection.h"
 
 #include <string>
 #include <unordered_map>

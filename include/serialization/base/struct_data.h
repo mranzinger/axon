@@ -37,6 +37,20 @@ public:
 		m_props.emplace_back(std::move(a_name), std::move(a_val));
 	}
 
+	void Set(const std::string &a_name, AData::Ptr a_val)
+	{
+		auto iter = std::find_if(m_props.begin(), m_props.end(),
+				[&a_name] (const TProp &a_prop)
+				{
+					return a_name == a_prop.first;
+				});
+
+		if (iter == m_props.end())
+			Add(a_name, std::move(a_val));
+		else
+			iter->second = std::move(a_val);
+	}
+
 	const AData::Ptr &Get(const std::string &a_name) const
 	{
 		static const AData::Ptr s_missing;
@@ -51,6 +65,20 @@ public:
 			return iter->second;
 		else
 			return s_missing;
+	}
+
+	AData *Find(const std::string &a_name) const
+	{
+		auto iter = std::find_if(m_props.begin(), m_props.end(),
+				[&a_name] (const TProp &a_prop)
+				{
+					return a_name == a_prop.first;
+				});
+
+		if (iter != m_props.end())
+			return iter->second.get();
+		else
+			return nullptr;
 	}
 
 	TVec::const_iterator begin() const { return m_props.begin(); }
