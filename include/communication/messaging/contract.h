@@ -23,6 +23,9 @@ class CContract;
 template<typename TupleType, int Ct>
 struct arg_unpacker;
 
+template<typename Fn>
+struct fn_invoker;
+
 template<typename Ret, typename ...Args>
 class CContract<Ret (Args...)>
 {
@@ -49,23 +52,40 @@ public:
 		return std::move(l_msg);
 	}
 
+	CMessage::Ptr SerializeVoidRet(const CMessage &a_inMsg) const
+	{
+		return std::make_shared<CMessage>(a_inMsg, MessageType::Normal);
+	}
+
 	template<typename TRet>
 	CMessage::Ptr SerializeRet(const CMessage &a_inMsg, const TRet &a_val) const
 	{
-		auto l_msg = std::make_shared<CMessage>(a_inMsg);
+		auto l_msg = std::make_shared<CMessage>(a_inMsg, MessageType::Normal);
 
 		p_SerializeRet(*l_msg, a_val);
 
 		return std::move(l_msg);
 	}
 
-	tuple_type DeserializeArgs(const CMessage &a_msg)
+	tuple_type DeserializeArgs(const CMessage &a_msg) const
 	{
 		tuple_type l_tuple;
 
 		arg_unpacker<tuple_type, sizeof...(Args)>::unpack(a_msg, l_tuple);
 
-		return l_tuple;
+		return std::move(l_tuple);
+	}
+
+	template<typename Handler>
+	CMessage::Ptr Invoke(const CMessage &a_msg, Handler &&a_handler) const
+	{
+		return fn_invoker<Ret (Args...)>::invoke(this, std::forward<Handler>(a_handler), a_msg);
+	}
+
+	template<typename TRet>
+	TRet DeserializeRet(const CMessage &a_msg)
+	{
+		return a_msg.GetField<TRet>("Ret");
 	}
 
 
@@ -93,9 +113,9 @@ private:
 	}
 
 	template<typename TRet>
-	void p_SerializeRet(CMessage &a_msg, const TRet &a_val) const
+	void p_SerializeRet(CMessage &a_msg, TRet &&a_val) const
 	{
-		a_msg.Add("Ret", s::Serialize(a_val));
+		a_msg.Add("Ret", s::Serialize(std::forward<TRet>(a_val)));
 	}
 
 
@@ -122,6 +142,39 @@ struct arg_unpacker
 		arg_unpacker<TupleType, Ct-1>::unpack(l_msg, a_tuple);
 	}
 };
+
+template<typename ...Args>
+struct fn_invoker<void (Args...)>
+{
+	template<typename Fn>
+	static CMessage::Ptr invoke(const CContract<void (Args...)> *a_contract, Fn &&a_fn, const CMessage &a_msg)
+	{
+		auto l_tuple = a_contract->DeserializeArgs(a_msg);
+
+		InvokeFunction(std::forward<Fn>(a_fn), l_tuple);
+
+		return a_contract->SerializeVoidRet(a_msg);
+	}
+};
+
+template<typename Ret, typename ...Args>
+struct fn_invoker<Ret (Args...)>
+{
+	template<typename Fn>
+	static CMessage::Ptr invoke(const CContract<Ret (Args...)> *a_contract, Fn &&a_fn, const CMessage &a_msg)
+	{
+		static_assert(std::is_convertible<Ret, typename util::return_type<Fn>::type>::value,
+				"\n\n\nContract and Function return types differ in a non-convertible manner.\n\n\n");
+
+		auto l_tuple = a_contract->DeserializeArgs(a_msg);
+
+		auto l_ret = InvokeFunction(std::forward<Fn>(a_fn), l_tuple);
+
+		return a_contract->SerializeRet(a_msg, l_ret);
+	}
+};
+
+
 
 
 

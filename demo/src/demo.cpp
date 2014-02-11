@@ -12,26 +12,23 @@
 #include "communication/messaging/contract.h"
 
 using namespace std;
+using namespace axon::util;
 using namespace axon::serialization;
 using namespace axon::communication;
 
 int main(int argc, char *argv[])
 {
-	//map<int, string> l_map1{ { 0, "foo" }, { 1, "bar" }, { 2, "baz" } };
-
-	//vector<double> l_vec(20000);
-
-	//test(CJsonSerializer(), l_vec);
-	//test(CXmlSerializer(), l_vec);
-	//test(CAxonSerializer(), l_vec);
-
-	//test(CAxonSerializer(), shared_ptr<CBase>(new CDerived));
-
-	CContract<void (int, int)> l_add("Add");
+	CContract<int (int, int)> l_add("Add");
 
 	CMessage::Ptr l_msg = l_add.Serialize(42, 45);
 
-	auto l_tuple = l_add.DeserializeArgs(*l_msg);
+	CMessage::Ptr l_ret = l_add.Invoke(*l_msg,
+			[] (int a, int b)
+			{
+				return a + b;
+			});
+
+	auto l_result = l_add.DeserializeRet<int>(*l_ret);
 
 	return 0;
 }

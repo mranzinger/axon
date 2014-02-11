@@ -38,11 +38,17 @@ typename util::return_type<Fn>::type invoke_fn(Fn &&a_fn, Tuple &&a_tuple, const
 
 }
 
-template<typename Ret, typename ...Args>
-Ret InvokeFunction(const std::function<Ret (Args...)> &a_fn, const std::tuple<Args...> &a_tuple)
+template<typename Fn, typename ...Args>
+typename util::return_type<Fn>::type InvokeFunction(Fn &&a_fn, const std::tuple<Args...> &a_tuple)
 {
-	return invoke_fn(a_fn, a_tuple, typename CGenSequence<sizeof...(Args)>::type());
+	return invoke_fn(std::forward<Fn>(a_fn), a_tuple, typename CGenSequence<sizeof...(Args)>::type());
 }
+
+//template<typename Ret, typename ...Args>
+//Ret InvokeFunction(const std::function<Ret (Args...)> &a_fn, const std::tuple<Args...> &a_tuple)
+//{
+//	return invoke_fn(a_fn, a_tuple, typename CGenSequence<sizeof...(Args)>::type());
+//}
 
 
 } }
