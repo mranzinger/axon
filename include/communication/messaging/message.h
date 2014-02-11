@@ -63,9 +63,19 @@ public:
 	MessageType Type() const;
 
 	template<typename T>
-	T GetField(const char *a_fieldName) const
+	T GetField(const std::string &a_fieldName) const
 	{
 		return serialization::Deserialize<T>(m_message->Get(a_fieldName));
+	}
+
+	serialization::AData *FindField(const std::string &a_fieldName)
+	{
+		return m_message->Get(a_fieldName).get();
+	}
+
+	void Add(std::string a_name, serialization::AData::Ptr a_data)
+	{
+		m_message->Add(std::move(a_name), std::move(a_data));
 	}
 
 private:
