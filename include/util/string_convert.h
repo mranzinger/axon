@@ -52,41 +52,68 @@ std::wstring ToStringW(const T &val)
 }
 
 template<typename T>
+struct CStringTo
+{
+	static T Get(const std::string &s)
+	{
+		T val;
+		Get(s, val);
+		return val;
+	}
+
+	static void Get(const std::string &s, T &val)
+	{
+		std::istringstream ss(s);
+
+		ss >> val;
+
+		if (ss.bad())
+			throw std::exception("Unable to parse specified string into val");
+	}
+};
+
+template<typename T>
+struct CWStringTo
+{
+	static T Get(const std::wstring &s)
+	{
+		T val;
+		Get(s, val);
+		return val;
+	}
+	static void Get(const std::wstring &s, T &val)
+	{
+		std::wistringstream ss(s);
+
+		ss >> val;
+
+		if (ss.bad())
+			throw std::exception("Unable to parse specified string into val");
+	}
+};
+
+template<typename T>
 T StringTo(const std::string &s)
 {
-	T val;
-	StringTo(s, val);
-	return val;
+	return CStringTo<T>::Get(s);
 }
 
 template<typename T>
 T StringTo(const std::wstring &s)
 {
-	T val;
-	StringTo(s, val);
-	return val;
+	return CWStringTo<T>::Get(s);
 }
 
 template<typename T>
 void StringTo(const std::string &s, T &val)
 {
-	std::istringstream ss(s);
-
-	ss >> val;
-
-	if (ss.bad())
-		throw std::exception("Unable to parse specified string into val");
+	CStringTo<T>::Get(s, val);
 }
 
 template<typename T>
 void StringTo(const std::wstring &s, T &val)
 {
-	std::wistringstream ss(s);
-
-	ss >> val;
-
-	if (ss.bad())
-		throw std::exception("Unable to parse specified string into val");
+	CWStringTo<T>::Get(s, val);
 }
 
 template<>

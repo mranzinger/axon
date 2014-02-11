@@ -8,14 +8,17 @@
 #include "messaging/message.h"
 #include "messaging/fault_serialization.h"
 
+#include "util/enum_to_string.h"
+
 using namespace std;
 using namespace axon::serialization;
-
-namespace axon { namespace communication {
+using namespace axon::communication;
 
 ENUM_IO_MAP(MessageType)
 	ENMAP(MessageType::Fault, "Fault")
 	ENMAP(MessageType::Normal, "Normal");
+
+namespace axon { namespace communication {
 
 CMessage::CMessage(MessageType a_type)
 {

@@ -68,7 +68,7 @@ public:
 	{
 		for (auto iter = _map.begin(), end = _map.end(); iter != end; ++iter)
 		{
-			if (stricmp(iter->second.c_str(), s.c_str()) == 0)
+			if (strcasecmp(iter->second.c_str(), s.c_str()) == 0)
 				return iter->first;
 		}
 
@@ -100,9 +100,8 @@ private:
 	return in; } \
 	namespace axon { namespace util {\
 	template<> inline EnumType StringTo<EnumType>(const std::string &s) { return varName.string_to(s); } \
-	template<> inline std::string ToString<EnumType>(const EnumType &val) { return varName.to_string(val); } \
-	__declspec(selectany) const EnumIOInternal::enum_io_helper<EnumType> varName = EnumIOInternal::enum_io_helper<EnumType>(); \
-	} }
+	template<> inline std::string ToString<EnumType>(const EnumType &val) { return varName.to_string(val); } } } \
+	const axon::util::EnumIOInternal::enum_io_helper<EnumType> varName = axon::util::EnumIOInternal::enum_io_helper<EnumType>()
 
 #define ENUM_IO_MAP(EnumType) ENUM_IO_MAP_SL(EnumType, MAKE_UNIQUE(__enumIO_))
 
