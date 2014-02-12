@@ -17,6 +17,8 @@ namespace axon { namespace communication {
 
 class CAxonServer;
 
+struct CMessageSocket;
+
 class CAxonClient
 	: public AContractHost
 {
@@ -25,8 +27,8 @@ private:
 	IProtocol::Ptr m_protocol;
 
 	std::condition_variable m_newMessageEvent;
-	std::mutex m_newMessageLock;
-	std::unordered_map<std::string, CMessage::Ptr> m_newMessages;
+	std::mutex m_pendingLock;
+	std::vector<CMessageSocket*> m_pendingList;
 
 public:
 	CAxonClient();
@@ -40,6 +42,12 @@ public:
 	void SetProtocol(IProtocol::Ptr a_protocol);
 
 	CMessage::Ptr Send(const CMessage &a_message, uint32_t a_timeout);
+
+private:
+	void p_SendNonBlocking(const CMessage &a_message);
+
+	void p_OnDataReceived(char *a_buffer, int a_bufferSize);
+	void p_OnMessageReceived(const CMessage::Ptr &a_message);
 };
 
 } }

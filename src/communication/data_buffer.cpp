@@ -7,6 +7,10 @@
 
 #include "messaging/data_buffer.h"
 
+#include <string.h>
+
+using namespace std;
+
 namespace axon { namespace communication {
 
 CDataBuffer::CDataBuffer()
@@ -56,6 +60,15 @@ void CDataBuffer::Reset(size_t a_buffSize)
 {
 	m_buff.reset(new char[a_buffSize]);
 	m_buffSize = a_buffSize;
+}
+
+CDataBuffer CDataBuffer::Copy(const char* a_data, size_t a_dataSize)
+{
+	CDataBuffer l_ret(a_dataSize);
+
+	memcpy(l_ret.data(), a_data, a_dataSize);
+
+	return std::move(l_ret);
 }
 
 } }

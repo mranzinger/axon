@@ -51,10 +51,10 @@ public:
 
 	bool RemoveContract(const std::string &a_action);
 
-protected:
-	CMessage::Ptr p_Handle(const CMessage &a_msg) const;
+	CMessage::Ptr Handle(const CMessage &a_msg) const;
+	bool TryHandle(const CMessage &a_msg, CMessage::Ptr &a_out) const;
 
-	IContractHandlerPtr p_FindHandler(const std::string &a_action) const;
+	IContractHandlerPtr FindHandler(const std::string &a_action) const;
 };
 
 class IContractHandler

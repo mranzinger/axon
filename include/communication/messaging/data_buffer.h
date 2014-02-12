@@ -51,6 +51,8 @@ public:
 
 	void Reset(size_t a_buffSize);
 
+	static CDataBuffer Copy(const char *a_data, size_t a_dataSize);
+
 	/*
 	 * Breaking coding conventions here to better align with STL
 	 * conventions

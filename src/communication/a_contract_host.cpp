@@ -12,25 +12,36 @@ using namespace std;
 
 namespace axon { namespace communication {
 
-CMessage::Ptr AContractHost::p_Handle(const CMessage& a_msg) const
+CMessage::Ptr AContractHost::Handle(const CMessage& a_msg) const
+{
+	CMessage::Ptr l_ret;
+	if (!TryHandle(a_msg, l_ret))
+		throw runtime_error("Unable to locate message handler for action '" + a_msg.GetAction() + "'.");
+
+	return move(l_ret);
+}
+
+bool AContractHost::TryHandle(const CMessage& a_msg, CMessage::Ptr& a_out) const
 {
 	try
 	{
-		IContractHandlerPtr l_handler = p_FindHandler(a_msg.GetAction());
+		IContractHandlerPtr l_handler = FindHandler(a_msg.GetAction());
 
 		if (!l_handler)
-			throw runtime_error("Unable to locate message handler for action '" + a_msg.GetAction() + "'.");
+			return false;
 
-		return l_handler->Invoke(a_msg);
+		a_out = l_handler->Invoke(a_msg);
 	}
 	catch (CFaultException &ex)
 	{
-		return make_shared<CMessage>(a_msg, ex);
+		a_out = make_shared<CMessage>(a_msg, ex);
 	}
 	catch (exception &ex)
 	{
-		return make_shared<CMessage>(a_msg, ex);
+		a_out = make_shared<CMessage>(a_msg, ex);
 	}
+
+	return true;
 }
 
 bool AContractHost::RemoveContract(const std::string& a_action)
@@ -40,7 +51,9 @@ bool AContractHost::RemoveContract(const std::string& a_action)
 	return m_handlers.erase(a_action) != 0;
 }
 
-IContractHandlerPtr AContractHost::p_FindHandler(const std::string& a_action) const
+
+
+IContractHandlerPtr AContractHost::FindHandler(const std::string& a_action) const
 {
 	lock_guard<mutex> l_lock(m_handlerLock);
 
