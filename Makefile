@@ -69,6 +69,8 @@ $(OBJ_SER)/%.od: $(SRC_SER)/%.cpp
 			-Iinclude/serialization \
 			-Ithirdparty/include \
 			-Lthirdparty/pugixml/lib \
+			-Llib \
+			-laxutild \
 			-lpugixmld
 
 $(OBJ_SER)/%.o: $(SRC_SER)/%.cpp
@@ -77,6 +79,8 @@ $(OBJ_SER)/%.o: $(SRC_SER)/%.cpp
 			-Iinclude/serialization \
 			-Ithirdparty/include \
 			-Lthirdparty/pugixml/lib \
+			-Llib \
+			-laxutil \
 			-lpugixml
 
 $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
@@ -85,6 +89,8 @@ $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
 			-Iinclude/communication \
 			-Ithirdparty/include \
 			-Lthirdparty/pugixml/lib \
+			-Llib \
+			-laxserd -laxutild \
 			-lpugixmld
 
 $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
@@ -93,6 +99,8 @@ $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
 			-Iinclude/communication \
 			-Ithirdparty/include \
 			-Lthirdparty/pugixml/lib \
+			-Llib \
+			-laxser -laxutil \
 			-lpugixml
 
 lib/libaxutild.a: $(UTIL_OBJS_D)
@@ -118,14 +126,14 @@ demo/demo_debug: $(DEMO_SRC) $(LIBS_D)
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
-		-laxserd -laxutild -laxcommd -lpugixmld
+		-laxcommd -laxserd -laxutild -lpugixmld
 
 demo/demo_release: $(DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
-		-laxser -laxutil -laxcomm -lpugixml
+		-laxcomm -laxser -laxutil -lpugixml
 
 clean:
 	rm -rf lib

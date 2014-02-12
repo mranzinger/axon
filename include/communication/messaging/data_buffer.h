@@ -26,6 +26,7 @@ public:
 	typedef const char *const_iterator;
 
 	CDataBuffer();
+	CDataBuffer(size_t a_dataSize);
 	CDataBuffer(char *data, size_t dataSize);
 
 	CDataBuffer(CDataBuffer &&other);
@@ -47,6 +48,8 @@ public:
 	{
 		return *(m_buff.get() + idx);
 	}
+
+	void Reset(size_t a_buffSize);
 
 	/*
 	 * Breaking coding conventions here to better align with STL

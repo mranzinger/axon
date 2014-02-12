@@ -61,7 +61,7 @@ public:
 	 */
 	virtual size_t SerializeInto(const AData &a_data, char *a_buffer, size_t a_bufferSize) const;
 
-
+	virtual AData::Ptr DeserializeData(const char *a_buf, const char *a_endBuf) const = 0;
 
 protected:
 	/*
@@ -70,7 +70,7 @@ protected:
 	 */
 	virtual std::string SerializeData(const AData &a_data) const = 0;
 
-	virtual AData::Ptr DeserializeData(const char *a_buf, const char *a_endBuf) const = 0;
+
 };
 
 } }

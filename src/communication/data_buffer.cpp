@@ -15,6 +15,11 @@ CDataBuffer::CDataBuffer()
 
 }
 
+CDataBuffer::CDataBuffer(size_t a_dataSize)
+{
+	Reset(a_dataSize);
+}
+
 CDataBuffer::CDataBuffer( char *data, size_t dataSize )
 	: m_buff(data), m_buffSize(dataSize)
 {
@@ -43,6 +48,14 @@ util::CBuffer CDataBuffer::ToShared()
 	util::CBuffer ret(m_buffSize, m_buff.release(), util::CBuffer::TakeOwnership);
 	m_buffSize = 0;
 	return ret;
+}
+
+
+
+void CDataBuffer::Reset(size_t a_buffSize)
+{
+	m_buff.reset(new char[a_buffSize]);
+	m_buffSize = a_buffSize;
 }
 
 } }
