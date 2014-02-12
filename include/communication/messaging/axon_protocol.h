@@ -28,7 +28,7 @@ private:
 	serialization::ASerializer::Ptr m_serializer;
 
 public:
-	typedef std::shared_ptr<CAxonProtocol> Ptr;
+	typedef std::unique_ptr<CAxonProtocol> Ptr;
 
 	CAxonProtocol();
 	CAxonProtocol(serialization::ASerializer::Ptr a_serializer);

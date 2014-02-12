@@ -17,7 +17,7 @@ namespace axon { namespace communication {
 class IProtocol
 {
 public:
-	typedef std::shared_ptr<IProtocol> Ptr;
+	typedef std::unique_ptr<IProtocol> Ptr;
 
 	typedef std::function<void (CMessage::Ptr)> HandlerFn;
 
@@ -29,6 +29,8 @@ public:
 
 	virtual void SetHandler(HandlerFn a_fn) = 0;
 };
+
+IProtocol::Ptr GetDefaultProtocol();
 
 } }
 

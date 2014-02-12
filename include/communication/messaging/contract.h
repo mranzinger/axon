@@ -43,6 +43,8 @@ public:
 
 	}
 
+	const std::string &GetAction() const { return m_action; }
+
 	CMessage::Ptr Serialize(const Args &...a_vals) const
 	{
 		auto l_msg = std::make_shared<CMessage>();
