@@ -11,8 +11,10 @@
 #include <memory>
 #include <condition_variable>
 #include <functional>
+#include <string>
 
 #include "util/buffer.h"
+#include "messaging/data_buffer.h"
 
 namespace axon { namespace communication {
 
@@ -23,10 +25,7 @@ public:
 	typedef std::weak_ptr<IDataConnection> WeakPtr;
 
 	// Callback that gets invoked when data is received from the connection.
-	// Argument types are char * and int, which is the buffer that was received,
-	// and it's length. This buffer is owned by the connection, and thus needs to be
-	// copied away if it will be used async or outside the scope of the handler.
-	typedef std::function<void (char*, int)> DataReceivedHandler;
+	typedef std::function<void (CDataBuffer)> DataReceivedHandler;
 
 	typedef std::function<Ptr (const std::string &)> DataConnectionFactory;
 
@@ -71,9 +70,14 @@ public:
 	virtual bool IsOpen() const = 0;
 	virtual bool IsServerClient() const = 0;
 
-	virtual void Send(const util::CBuffer &buff, std::condition_variable *finishEvt = nullptr) = 0;
+	virtual void Send(const util::CBuffer &a_buff)
+	{
+		Send(a_buff, nullptr);
+	}
 
-	virtual void SetReceiveHandler(const DataReceivedHandler &handler) = 0;
+	virtual void Send(const util::CBuffer &buff, std::condition_variable *finishEvt) = 0;
+
+	virtual void SetReceiveHandler(DataReceivedHandler handler) = 0;
 };
 
 /*

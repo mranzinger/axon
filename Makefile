@@ -21,7 +21,7 @@ OBJ_COMM = $(OBJ_ROOT)/communication
 
 UTIL_SRC = $(wildcard $(SRC_UTIL)/*.cpp)
 SER_SRC = $(wildcard $(SRC_SER)/*.cpp)
-COM_SRC = $(wildcard $(SRC_COMM)/*.cpp)
+COM_SRC = $(wildcard $(SRC_COMM)/*.cpp) $(wildcard $(SRC_COMM)/detail/*.h)
 DEMO_SRC = $(wildcard $(SRC_DEMO)/*.cpp)
 
 UTIL_OBJS = $(patsubst $(SRC_ROOT)/util/%.cpp,$(OBJ_UTIL)/%.o,$(UTIL_SRC))
@@ -91,7 +91,8 @@ $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxserd -laxutild \
-			-lpugixmld
+			-lpugixmld \
+			-levent -levent_pthreads -levent_core
 
 $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
 	$(CC) $(RFLAGS) -c $< -o $@ \
@@ -101,7 +102,8 @@ $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxser -laxutil \
-			-lpugixml
+			-lpugixml \
+			-levent -levent_pthreads -levent_core
 
 lib/libaxutild.a: $(UTIL_OBJS_D)
 	ar rvs $@ $^
@@ -126,14 +128,16 @@ demo/demo_debug: $(DEMO_SRC) $(LIBS_D)
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
-		-laxcommd -laxserd -laxutild -lpugixmld
+		-laxcommd -laxserd -laxutild -lpugixmld \
+		-levent
 
 demo/demo_release: $(DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
-		-laxcomm -laxser -laxutil -lpugixml
+		-laxcomm -laxser -laxutil -lpugixml \
+		-levent
 
 clean:
 	rm -rf lib

@@ -68,7 +68,7 @@ struct CStringTo
 		ss >> val;
 
 		if (ss.bad())
-			throw std::exception("Unable to parse specified string into val");
+			throw std::runtime_error("Unable to parse specified string into val");
 	}
 };
 
@@ -88,7 +88,7 @@ struct CWStringTo
 		ss >> val;
 
 		if (ss.bad())
-			throw std::exception("Unable to parse specified string into val");
+			throw std::runtime_error("Unable to parse specified string into val");
 	}
 };
 

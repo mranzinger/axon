@@ -85,9 +85,9 @@ public:
 	}
 
 	template<typename TRet>
-	TRet DeserializeRet(const CMessage &a_msg)
+	void DeserializeRet(const CMessage &a_msg, TRet &a_val) const
 	{
-		return a_msg.GetField<TRet>("Ret");
+		a_val = a_msg.GetField<TRet>("Ret");
 	}
 
 

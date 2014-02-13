@@ -98,7 +98,7 @@ inline size_t hash_value(const uuid &u) /* throw() */
     return seed;
 }
 
-uuid make_uuid()
+inline uuid make_uuid()
 {
 	using namespace std;
 
@@ -138,12 +138,12 @@ uuid make_uuid()
 	return u;
 }
 
-std::string ToString(const uuid &a_uuid)
+inline std::string ToString(const uuid &a_uuid)
 {
 	return std::string(a_uuid.begin(), a_uuid.end());
 }
 
-void StringTo(const std::string &a_str, uuid &a_val)
+inline void StringTo(const std::string &a_str, uuid &a_val)
 {
 	memcpy(a_val.begin(), a_str.c_str(), sizeof(uuid));
 }

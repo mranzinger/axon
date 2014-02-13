@@ -29,6 +29,27 @@ public:
 	virtual CMessage::Ptr Send(const CMessage &a_message) = 0;
 	virtual CMessage::Ptr Send(const CMessage &a_message, uint32_t a_timeout) = 0;
 	virtual void SendNonBlocking(const CMessage &a_message) = 0;
+
+	template<typename Ret, typename ...Args>
+	Ret Send(const CContract<Ret (Args...)> &a_contract, const Args &...a_args)
+	{
+		CMessage::Ptr l_send = a_contract.Serialize(a_args...);
+
+		CMessage::Ptr l_ret = Send(*l_send);
+
+		Ret l_retval;
+		a_contract.DeserializeRet(*l_ret, l_retval);
+
+		return std::move(l_retval);
+	}
+
+	template<typename ...Args>
+	void Send(const CContract<void (Args...)> &a_contract, const Args &...a_args)
+	{
+		CMessage::Ptr l_send = a_contract.Serialize(a_args...);
+
+		(void) Send(*l_send);
+	}
 };
 
 } }

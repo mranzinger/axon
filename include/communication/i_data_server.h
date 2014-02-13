@@ -35,10 +35,10 @@ public:
 
 	virtual size_t NumClients() const = 0;
 
-	virtual void Broadcast(const util::CBuffer &buff) = 0;
+	virtual void Broadcast(const util::CBuffer &a_buff) = 0;
 
-	virtual void SetConnectedHandler(const ConnectedHandler &h) = 0;
-	virtual void SetDisconnectedHandler(const DisconnectedHandler &h) = 0;
+	virtual void SetConnectedHandler(ConnectedHandler a_handler) = 0;
+	virtual void SetDisconnectedHandler(DisconnectedHandler a_handler) = 0;
 };
 
 template<typename DataServerType>

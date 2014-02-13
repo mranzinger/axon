@@ -34,7 +34,14 @@ public:
 	CAxonClient();
 	CAxonClient(const std::string &a_connectionString);
 	CAxonClient(IDataConnection::Ptr a_connection);
+	CAxonClient(const std::string &a_connectionString, IProtocol::Ptr a_protocol);
 	CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol);
+
+	static Ptr Create();
+	static Ptr Create(const std::string &a_connectionString);
+	static Ptr Create(IDataConnection::Ptr a_connection);
+	static Ptr Create(const std::string &a_connectionString, IProtocol::Ptr a_protocol);
+	static Ptr Create(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol);
 
 	virtual void Connect(const std::string &a_connectionString) override;
 	virtual void Connect(IDataConnection::Ptr a_connection) override;
@@ -51,8 +58,7 @@ protected:
 
 private:
 
-
-	void p_OnDataReceived(char *a_buffer, int a_bufferSize);
+	void p_OnDataReceived(CDataBuffer a_buffer);
 	void p_OnMessageReceived(const CMessage::Ptr &a_message);
 };
 

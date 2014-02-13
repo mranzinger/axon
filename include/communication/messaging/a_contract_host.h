@@ -26,8 +26,6 @@ private:
 	mutable std::mutex m_handlerLock;
 
 public:
-	virtual ~AContractHost() = 0;
-
 	virtual void HostContract(IContractHandlerPtr a_handler) override;
 
 	void Adopt(const AContractHost &a_other);
@@ -38,6 +36,9 @@ public:
 	virtual bool TryHandle(const CMessage &a_msg, CMessage::Ptr &a_out) const override;
 
 	virtual IContractHandlerPtr FindHandler(const std::string &a_action) const override;
+
+protected:
+	AContractHost() { }
 };
 
 

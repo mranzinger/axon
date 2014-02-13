@@ -42,11 +42,49 @@ CAxonClient::CAxonClient(IDataConnection::Ptr a_connection)
 	SetDefaultProtocol();
 }
 
+CAxonClient::CAxonClient(const std::string& a_connectionString, IProtocol::Ptr a_protocol)
+{
+	SetProtocol(move(a_protocol));
+
+	Connect(a_connectionString);
+}
+
 CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol)
 {
 	SetProtocol(move(a_protocol));
 
 	Connect(a_connection);
+}
+
+
+
+
+
+CAxonClient::Ptr CAxonClient::Create()
+{
+	return make_shared<CAxonClient>();
+}
+
+CAxonClient::Ptr CAxonClient::Create(const std::string& a_connectionString)
+{
+	return make_shared<CAxonClient>(a_connectionString);
+}
+
+CAxonClient::Ptr CAxonClient::Create(IDataConnection::Ptr a_connection)
+{
+	return make_shared<CAxonClient>(move(a_connection));
+}
+
+CAxonClient::Ptr CAxonClient::Create(const std::string& a_connectionString,
+		IProtocol::Ptr a_protocol)
+{
+	return make_shared<CAxonClient>(a_connectionString, move(a_protocol));
+}
+
+CAxonClient::Ptr CAxonClient::Create(IDataConnection::Ptr a_connection,
+		IProtocol::Ptr a_protocol)
+{
+	return make_shared<CAxonClient>(move(a_connection), move(a_protocol));
 }
 
 void CAxonClient::Connect(const std::string& a_connectionString)
@@ -60,7 +98,7 @@ void CAxonClient::Connect(IDataConnection::Ptr a_connection)
 
 	if (m_connection)
 	{
-		m_connection->SetReceiveHandler(bind(&CAxonClient::p_OnDataReceived, this, placeholders::_1, placeholders::_2));
+		m_connection->SetReceiveHandler(bind(&CAxonClient::p_OnDataReceived, this, placeholders::_1));
 	}
 }
 
@@ -142,6 +180,8 @@ void CAxonClient::SendNonBlocking(const CMessage& a_message)
 
 	m_connection->Send(l_buffer.ToShared());
 }
+
+
 
 void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 {
@@ -227,7 +267,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 	}
 }
 
-void CAxonClient::p_OnDataReceived(char* a_buffer, int a_bufferSize)
+void CAxonClient::p_OnDataReceived(CDataBuffer a_buffer)
 {
 	// This function is invoked whenever the data connection
 	// signals that data has been received from the remote peer.
@@ -235,7 +275,7 @@ void CAxonClient::p_OnDataReceived(char* a_buffer, int a_bufferSize)
 	// the protocol so that a message can be reconstructed from it.
 	// The data connection owns the buffer, so a copy must be made
 
-	m_protocol->Process(CDataBuffer::Copy(a_buffer, a_bufferSize));
+	m_protocol->Process(move(a_buffer));
 }
 
 bool CAxonClient::TryHandleWithServer(const CMessage& a_msg, CMessage::Ptr& a_out) const
