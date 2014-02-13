@@ -19,7 +19,6 @@ public:
 
 	typedef std::function<void (IDataConnection::Ptr)> ConnectedHandler;
 	typedef ConnectedHandler DisconnectedHandler;
-	typedef std::function<void (IDataConnection::Ptr, char*, int)> DataReceivedHandler;
 
 	typedef std::function<Ptr (const std::string &)> DataServerFactory;
 
@@ -40,7 +39,6 @@ public:
 
 	virtual void SetConnectedHandler(const ConnectedHandler &h) = 0;
 	virtual void SetDisconnectedHandler(const DisconnectedHandler &h) = 0;
-	virtual void SetReceivedHandler(const DataReceivedHandler &h) = 0;
 };
 
 template<typename DataServerType>

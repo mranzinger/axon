@@ -42,6 +42,13 @@ CAxonClient::CAxonClient(IDataConnection::Ptr a_connection)
 	SetDefaultProtocol();
 }
 
+CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol)
+{
+	SetProtocol(move(a_protocol));
+
+	Connect(a_connection);
+}
+
 void CAxonClient::Connect(const std::string& a_connectionString)
 {
 	Connect(IDataConnection::Create(a_connectionString));
@@ -72,12 +79,18 @@ void CAxonClient::SetProtocol(IProtocol::Ptr a_protocol)
 	m_protocol->SetHandler(bind(&CAxonClient::p_OnMessageReceived, this, placeholders::_1));
 }
 
+CMessage::Ptr CAxonClient::Send(const CMessage& a_message)
+{
+	// Default timeout is 1 minute
+	return Send(a_message, 60000);
+}
+
 CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
 {
 	if (!m_connection || !m_connection->IsOpen())
 		throw runtime_error("Cannot send data over a dead connection.");
 
-	p_SendNonBlocking(a_message);
+	SendNonBlocking(a_message);
 
 	auto l_start = chrono::steady_clock::now();
 
@@ -119,8 +132,12 @@ CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
 	return move(l_socket.IncomingMessage);
 }
 
-void CAxonClient::p_SendNonBlocking(const CMessage& a_message)
+void CAxonClient::SendNonBlocking(const CMessage& a_message)
 {
+	// Hacky, but we need to flag the message as one way so that
+	// a response doesn't get generated
+	const_cast<CMessage&>(a_message).SetOneWay(true);
+
 	CDataBuffer l_buffer = m_protocol->SerializeMessage(a_message);
 
 	m_connection->Send(l_buffer.ToShared());
@@ -178,14 +195,36 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 	{
 		// There was a handler for this message, so now
 		// send it back out to the caller
-		p_SendNonBlocking(*l_response);
+		if (!a_message->IsOneWay())
+			SendNonBlocking(*l_response);
 		l_handled = true;
 	}
 
 	if (l_handled)
 		return;
 
-	// TODO: Allow the server to handle this
+	if (TryHandleWithServer(*a_message, l_response))
+	{
+		if (!a_message->IsOneWay())
+			SendNonBlocking(*l_response);
+		l_handled = true;
+	}
+
+	if (l_handled)
+		return;
+
+	// If this message is not a request, then send a fault back to the caller
+	if (a_message->RequestId().empty() && !a_message->IsOneWay())
+	{
+		l_response = make_shared<CMessage>(*a_message,
+				CFaultException("The action '" + a_message->GetAction() + "' has no supported handlers."));
+		SendNonBlocking(*l_response);
+	}
+	else
+	{
+		// This is probably due to a timeout
+		// TODO: Log this
+	}
 }
 
 void CAxonClient::p_OnDataReceived(char* a_buffer, int a_bufferSize)
@@ -197,6 +236,12 @@ void CAxonClient::p_OnDataReceived(char* a_buffer, int a_bufferSize)
 	// The data connection owns the buffer, so a copy must be made
 
 	m_protocol->Process(CDataBuffer::Copy(a_buffer, a_bufferSize));
+}
+
+bool CAxonClient::TryHandleWithServer(const CMessage& a_msg, CMessage::Ptr& a_out) const
+{
+	// Derived instances need to override this
+	return false;
 }
 
 }

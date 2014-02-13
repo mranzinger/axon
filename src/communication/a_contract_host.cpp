@@ -12,6 +12,14 @@ using namespace std;
 
 namespace axon { namespace communication {
 
+void AContractHost::HostContract(IContractHandlerPtr a_handler)
+{
+	std::lock_guard<std::mutex> l_lock(m_handlerLock);
+
+	if (!m_handlers.insert(HandlerMap::value_type(a_handler->GetAction(), a_handler)).second)
+		throw std::runtime_error("The specified contract action is already being hosted.");
+}
+
 CMessage::Ptr AContractHost::Handle(const CMessage& a_msg) const
 {
 	CMessage::Ptr l_ret;

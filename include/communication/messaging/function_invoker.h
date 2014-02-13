@@ -15,7 +15,7 @@
 
 namespace axon { namespace communication {
 
-namespace {
+namespace internal {
 
 template<int ...Sequence>
 struct CSequence { };
@@ -41,7 +41,8 @@ typename util::return_type<Fn>::type invoke_fn(Fn &&a_fn, Tuple &&a_tuple, const
 template<typename Fn, typename ...Args>
 typename util::return_type<Fn>::type InvokeFunction(Fn &&a_fn, const std::tuple<Args...> &a_tuple)
 {
-	return invoke_fn(std::forward<Fn>(a_fn), a_tuple, typename CGenSequence<sizeof...(Args)>::type());
+	return internal::invoke_fn(std::forward<Fn>(a_fn), a_tuple,
+			typename internal::CGenSequence<sizeof...(Args)>::type());
 }
 
 //template<typename Ret, typename ...Args>

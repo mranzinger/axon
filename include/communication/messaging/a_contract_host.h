@@ -4,24 +4,20 @@
  * Copyright information: Copyright Orchestr8 LLC
  */
 
-#ifndef I_CONTRACT_HOST_H_
-#define I_CONTRACT_HOST_H_
+#ifndef A_CONTRACT_HOST_H_
+#define A_CONTRACT_HOST_H_
 
 #include <unordered_map>
 #include <mutex>
 
-#include "contract.h"
+#include "i_contract_host.h"
 
 namespace axon { namespace communication {
 
-class IContractHandler;
 
-typedef std::shared_ptr<IContractHandler> IContractHandlerPtr;
-
-template<typename ContractType, typename HandlerType>
-class CContractHandler;
 
 class AContractHost
+	: public virtual IContractHost
 {
 private:
 	typedef std::unordered_map<std::string, IContractHandlerPtr> HandlerMap;
@@ -32,81 +28,23 @@ private:
 public:
 	virtual ~AContractHost() = 0;
 
-	template<typename ContractType, typename HandlerType>
-	IContractHandlerPtr HostContract(const ContractType &a_contract, const HandlerType &a_handler)
-	{
-		auto l_handler = std::make_shared<
-				CContractHandler<ContractType, HandlerType>
-			 >(a_contract, a_handler);
-
-		std::lock_guard<std::mutex> l_lock(m_handlerLock);
-
-		if (!m_handlers.insert(HandlerMap::value_type(a_contract.GetAction(), l_handler)).second)
-			throw std::runtime_error("The specified contract action is already being hosted.");
-
-		return l_handler;
-	}
+	virtual void HostContract(IContractHandlerPtr a_handler) override;
 
 	void Adopt(const AContractHost &a_other);
 
-	bool RemoveContract(const std::string &a_action);
+	virtual bool RemoveContract(const std::string &a_action) override;
 
-	CMessage::Ptr Handle(const CMessage &a_msg) const;
-	bool TryHandle(const CMessage &a_msg, CMessage::Ptr &a_out) const;
+	virtual CMessage::Ptr Handle(const CMessage &a_msg) const override;
+	virtual bool TryHandle(const CMessage &a_msg, CMessage::Ptr &a_out) const override;
 
-	IContractHandlerPtr FindHandler(const std::string &a_action) const;
+	virtual IContractHandlerPtr FindHandler(const std::string &a_action) const override;
 };
 
-class IContractHandler
-{
-public:
-	virtual ~IContractHandler() { }
 
-	virtual const std::string &GetAction() const = 0;
-
-	virtual CMessage::Ptr Invoke(const CMessage &a_msg) const = 0;
-};
-
-template<typename ContractType, typename HandlerType>
-class CContractHandler
-	: public virtual IContractHandler
-{
-private:
-	ContractType m_contract;
-	HandlerType m_handler;
-
-public:
-	virtual const std::string &GetAction() const override { return m_contract.GetAction(); }
-
-	virtual CMessage::Ptr Invoke(const CMessage &a_msg) const override
-	{
-		return m_contract.Invoke(a_msg, m_handler);
-	}
-};
-
-class CScopedContractHandler
-{
-private:
-	AContractHost &m_host;
-	IContractHandlerPtr m_handler;
-
-public:
-	template<typename ContractType, typename HandlerType>
-	CScopedContractHandler(AContractHost &a_host, const ContractType &a_contract, const HandlerType &a_handler)
-		: m_host(a_host)
-	{
-		m_handler = m_host.HostContract(a_contract, a_handler);
-	}
-
-	~CScopedContractHandler()
-	{
-		m_host.RemoveContract(m_handler->GetAction());
-	}
-};
 
 
 } }
 
 
 
-#endif /* I_CONTRACT_HOST_H_ */
+#endif /* A_CONTRACT_HOST_H_ */
