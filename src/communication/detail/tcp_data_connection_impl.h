@@ -18,12 +18,20 @@ using namespace axon::util;
 
 namespace axon { namespace communication { namespace tcp {
 
+typedef unique_ptr<bufferevent, void (*)(bufferevent*)> bufferevent_ptr;
+
+inline void s_FreeBuffEvt(bufferevent *a_evt)
+{
+	bufferevent_free(a_evt);
+}
+
 class CTcpDataConnection::Impl
 {
+public:
+
 private:
 	friend class CDispatcher;
 
-	typedef unique_ptr<bufferevent, void (*)(bufferevent*)> bufferevent_ptr;
 	bufferevent_ptr m_evt;
 
 	CDispatcher::Ptr m_disp;
@@ -43,13 +51,15 @@ public:
 	Impl();
 	Impl(const string &a_connectionString);
 	Impl(string a_hostName, int a_port);
+	Impl(bufferevent_ptr a_evt, string a_hostName, int a_port);
 
 
 	string ConnectionString() const;
-	bool Connect(string a_hostName, int a_port);
-	bool Connect(const string &a_connectionString);
-	void Close();
+	virtual bool Connect(string a_hostName, int a_port);
+	virtual bool Connect(const string &a_connectionString);
+	virtual void Close();
 	bool IsOpen() const;
+	virtual bool IsServerClient() const { return false; }
 
 	void Send(const CBuffer &a_buff, condition_variable *a_finishEvt);
 
@@ -59,29 +69,24 @@ private:
 	void p_WriteCallback(bufferevent *a_evt);
 	void p_ReadCallback(bufferevent *a_evt);
 	void p_EventCallback(bufferevent *a_evt, short a_flags);
+	void p_HookupEvt();
 
 	static void s_WriteCallback(bufferevent *a_evt, void *a_ptr);
 	static void s_ReadCallback(bufferevent *a_evt, void *a_ptr);
 	static void s_EventCallback(bufferevent *a_evt, short a_flags, void *a_ptr);
-
-	static void p_FreeBuffEvt(bufferevent *a_evt)
-	{
-		bufferevent_free(a_evt);
-	}
 };
 
 
 
 inline CTcpDataConnection::Impl::Impl()
-	: m_port(-1), m_var(nullptr), m_open(false), m_evt(nullptr, p_FreeBuffEvt)
+	: m_port(-1), m_var(nullptr), m_open(false), m_evt(nullptr, s_FreeBuffEvt)
 {
 	m_disp = CDispatcher::Get();
 
 	auto l_evt = bufferevent_socket_new(m_disp->Evt(), -1, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_THREADSAFE);
 	m_evt.reset(l_evt);
 
-	bufferevent_setcb(m_evt.get(), s_ReadCallback, s_WriteCallback, s_EventCallback, this);
-	bufferevent_enable(m_evt.get(), EV_READ|EV_WRITE);
+	p_HookupEvt();
 }
 
 inline CTcpDataConnection::Impl::Impl(const string& a_connectionString)
@@ -96,6 +101,20 @@ inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port)
 {
 	if (!Connect(move(a_hostName), a_port))
 		throw runtime_error("Unable to connect to the specified endpoint.");
+}
+
+inline CTcpDataConnection::Impl::Impl(bufferevent_ptr a_evt, string a_hostName, int a_port)
+	: m_port(a_port), m_var(nullptr), m_open(true), m_evt(move(a_evt)), m_hostName(move(a_hostName))
+{
+	m_disp = CDispatcher::Get();
+
+	p_HookupEvt();
+}
+
+inline void CTcpDataConnection::Impl::p_HookupEvt()
+{
+	bufferevent_setcb(m_evt.get(), s_ReadCallback, s_WriteCallback, s_EventCallback, this);
+	bufferevent_enable(m_evt.get(), EV_READ|EV_WRITE);
 }
 
 inline string CTcpDataConnection::Impl::ConnectionString() const
@@ -133,7 +152,7 @@ inline bool CTcpDataConnection::Impl::Connect(string a_hostName, int a_port)
 
 inline void CTcpDataConnection::Impl::Close()
 {
-	// TODO: Figure out how to do this
+	m_open = false;
 }
 
 inline bool CTcpDataConnection::Impl::IsOpen() const
@@ -218,11 +237,12 @@ inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short 
 	else if (a_flags & BEV_EVENT_EOF)
 	{
 		l_close = true;
+
 	}
 
 	if (l_close)
 	{
-		m_open = false;
+		Close();
 	}
 }
 
@@ -235,6 +255,8 @@ inline void CTcpDataConnection::Impl::s_ReadCallback(bufferevent* a_evt, void* a
 {
 	((Impl*)a_ptr)->p_ReadCallback(a_evt);
 }
+
+
 
 inline void CTcpDataConnection::Impl::s_EventCallback(bufferevent* a_evt, short a_flags, void* a_ptr)
 {

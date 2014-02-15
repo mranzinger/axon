@@ -14,8 +14,10 @@ namespace axon { namespace communication { namespace tcp {
 class CTcpDataServer
 	: public virtual IDataServer
 {
-private:
+public:
 	class Impl;
+
+private:
 	std::unique_ptr<Impl> m_impl;
 
 public:

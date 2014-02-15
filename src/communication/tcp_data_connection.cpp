@@ -65,7 +65,7 @@ bool CTcpDataConnection::IsOpen() const
 
 bool CTcpDataConnection::IsServerClient() const
 {
-	return false;
+	return m_impl->IsServerClient();
 }
 
 
