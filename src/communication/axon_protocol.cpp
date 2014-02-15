@@ -80,7 +80,7 @@ void CAxonProtocol::ProcessInternal(CDataBuffer a_buffer)
 	char *l_curr = a_buffer.Data();
 	char *l_end = a_buffer.end();
 
-	while (l_curr < l_end)
+	while (l_curr && l_curr < l_end)
 	{
 		switch (m_currState)
 		{

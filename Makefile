@@ -22,7 +22,9 @@ OBJ_COMM = $(OBJ_ROOT)/communication
 UTIL_SRC = $(wildcard $(SRC_UTIL)/*.cpp)
 SER_SRC = $(wildcard $(SRC_SER)/*.cpp)
 COM_SRC = $(wildcard $(SRC_COMM)/*.cpp) $(wildcard $(SRC_COMM)/detail/*.h)
-DEMO_SRC = $(wildcard $(SRC_DEMO)/*.cpp)
+
+CLIENT_DEMO_SRC = $(SRC_DEMO)/client_demo.cpp
+SERVER_DEMO_SRC = $(SRC_DEMO)/server_demo.cpp
 
 UTIL_OBJS = $(patsubst $(SRC_ROOT)/util/%.cpp,$(OBJ_UTIL)/%.o,$(UTIL_SRC))
 SER_OBJS = $(patsubst $(SRC_ROOT)/serialization/%.cpp,$(OBJ_ROOT)/serialization/%.o,$(SER_SRC))
@@ -41,15 +43,18 @@ OBJS_D = $(UTIL_OBJS_D) $(SER_OBJS_D) $(COM_OBJS_D)
 LIBS = lib/libaxutil.a lib/libaxser.a lib/libaxcomm.a
 LIBS_D = lib/libaxutild.a lib/libaxserd.a lib/libaxcommd.a
 
-EXES = demo/demo_debug demo/demo_release
+EXES_D = demo/client_demo_debug demo/server_demo_debug
+EXES_R = demo/client_demo_release demo/server_demo_release
+EXES = $(EXES_D) $(EXES_R)
+	    
 
 .PHONY: all clean setup
 
 all: debug release
 
-debug: setup $(OBJS_D) $(LIBS_D) demo/demo_debug $(INC_ALL)
+debug: setup $(OBJS_D) $(LIBS_D) $(EXES_D) $(INC_ALL)
 
-release: setup $(OBJS) $(LIBS) demo/demo_release $(INC_ALL)
+release: setup $(OBJS) $(LIBS) $(EXES_R) $(INC_ALL)
 
 setup:
 	mkdir -p lib
@@ -123,16 +128,32 @@ lib/libaxser.a: $(SER_OBJS)
 lib/libaxcomm.a: $(COM_OBJS)
 	ar rvs $@ $^
 
-demo/demo_debug: $(DEMO_SRC) $(LIBS_D)
-	$(CC) $(DFLAGS) $(DEMO_SRC) -o $@ \
+demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
+	$(CC) $(DFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
 		-levent
 
-demo/demo_release: $(DEMO_SRC) $(LIBS)
-	$(CC) $(RFLAGS) $(DEMO_SRC) -o $@ \
+demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
+	$(CC) $(RFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
+		-Iinclude \
+		-Llib \
+		-Lthirdparty/pugixml/lib \
+		-laxcomm -laxser -laxutil -lpugixml \
+		-levent
+
+demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
+	$(CC) $(DFLAGS) $(SERVER_DEMO_SRC) -o $@ \
+		-Iinclude \
+		-Llib \
+		-Lthirdparty/pugixml/lib \
+		-laxcommd -laxserd -laxutild -lpugixmld \
+		-levent
+
+demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
+	$(CC) $(RFLAGS) $(SERVER_DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \

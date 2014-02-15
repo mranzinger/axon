@@ -12,7 +12,7 @@ using namespace std;
 
 namespace axon { namespace communication {
 
-void AContractHost::HostContract(IContractHandlerPtr a_handler)
+void AContractHost::Host(IContractHandlerPtr a_handler)
 {
 	std::lock_guard<std::mutex> l_lock(m_handlerLock);
 

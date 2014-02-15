@@ -16,11 +16,13 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <unordered_map>
 
 #include <event2/listener.h>
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
+#include <arpa/inet.h>
 
 #include "util/string_convert.h"
 
@@ -44,7 +46,7 @@ private:
 
 	CDispatcher::Ptr m_dispatcher;
 
-	mutex m_connLock;
+	mutable mutex m_connLock;
 	unordered_map<CTcpDataConnection*, CTcpDataConnection::Ptr> m_conns;
 
 	int m_port;
@@ -176,8 +178,23 @@ public:
 	{
 		CTcpDataConnection::Impl::Close();
 
-		lock_guard<mutex> l_lock(m_server->m_connLock);
-		m_server->m_conns.erase(Conn);
+		IDataConnection::Ptr l_conn;
+
+		{
+			lock_guard<mutex> l_lock(m_server->m_connLock);
+
+			auto iter = m_server->m_conns.find(Conn);
+
+			if (iter == m_server->m_conns.end())
+				return;
+
+			l_conn = iter->second;
+			m_server->m_conns.erase(iter);
+		}
+
+		cout << "Cient Disconnected." << endl;
+
+		m_server->m_disconnectedHandler(l_conn);
 	}
 	virtual bool IsServerClient() const override { return true; }
 
@@ -217,6 +234,10 @@ inline void CTcpDataServer::Impl::p_AcceptCallback(evconnlistener* a_listener,
 		lock_guard<mutex> l_lock(m_connLock);
 		m_conns.insert(make_pair(l_conn.get(), l_conn));
 	}
+
+	cout << "Client Connected." << endl;
+
+	m_connectedHandler(l_conn);
 }
 
 inline void CTcpDataServer::Impl::p_AcceptErrorCallback(

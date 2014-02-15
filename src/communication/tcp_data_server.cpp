@@ -10,6 +10,12 @@
 
 namespace axon { namespace communication { namespace tcp {
 
+namespace {
+
+register_server<CTcpDataServer> s_tcpRegister("tcp");
+
+}
+
 CTcpDataServer::CTcpDataServer()
 	: m_impl(new Impl)
 {

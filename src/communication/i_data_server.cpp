@@ -12,7 +12,11 @@
 
 namespace axon { namespace communication {
 
+namespace {
+
 std::unordered_map<std::string, IDataServer::DataServerFactory> s_factoryMap;
+
+}
 
 IDataServer::Ptr IDataServer::Create( const std::string &hostString )
 {

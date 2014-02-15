@@ -10,6 +10,7 @@
 #include <memory>
 #include <thread>
 #include <atomic>
+#include <iostream>
 
 #include <event2/event.h>
 #include <event2/bufferevent.h>
@@ -49,7 +50,12 @@ public:
 	}
 	~CDispatcher()
 	{
-		event_base_loopbreak(m_base.get());
+		event_base_loopexit(m_base.get(), nullptr);
+
+		// Terminate the loop
+		event_base_once(m_base.get(), -1, EV_TIMEOUT, [](evutil_socket_t, short, void*){}, this, nullptr);
+
+		m_thread.join();
 	}
 
 	static Ptr Get()
@@ -72,7 +78,11 @@ public:
 private:
 	void p_Run()
 	{
+		cout << "Entering event dispatch loop." << endl;
+
 		event_base_dispatch(m_base.get());
+
+		cout << "Exiting event dispatch loop." << endl;
 	}
 
 	static void p_FreeBase(event_base *a_evt)

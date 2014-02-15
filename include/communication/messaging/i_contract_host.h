@@ -24,16 +24,16 @@ public:
 
 	virtual ~IContractHost() { }
 
-	virtual void HostContract(IContractHandlerPtr a_handler) = 0;
+	virtual void Host(IContractHandlerPtr a_handler) = 0;
 
 	template<typename ContractType, typename HandlerType>
-	IContractHandlerPtr HostContract(const ContractType &a_contract, const HandlerType &a_handler)
+	IContractHandlerPtr HostContract(ContractType a_contract, HandlerType a_handler)
 	{
 		auto l_handler = std::make_shared<
 				CContractHandler<ContractType, HandlerType>
-			 >(a_contract, a_handler);
+			 >(std::move(a_contract), std::move(a_handler));
 
-		HostContract(l_handler);
+		Host(l_handler);
 
 		return l_handler;
 	}
@@ -65,6 +65,11 @@ private:
 	HandlerType m_handler;
 
 public:
+	CContractHandler(ContractType a_contract, HandlerType a_handler)
+		: m_contract(std::move(a_contract)), m_handler(std::move(a_handler))
+	{
+	}
+
 	virtual const std::string &GetAction() const override { return m_contract.GetAction(); }
 
 	virtual CMessage::Ptr Invoke(const CMessage &a_msg) const override

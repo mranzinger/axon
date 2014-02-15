@@ -10,7 +10,11 @@
 
 namespace axon { namespace communication { namespace tcp {
 
+namespace {
+
 register_protocol<CTcpDataConnection> s_tcpRegister("tcp");
+
+}
 
 CTcpDataConnection::CTcpDataConnection()
 	: m_impl(new Impl)

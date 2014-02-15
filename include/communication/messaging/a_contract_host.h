@@ -26,7 +26,7 @@ private:
 	mutable std::mutex m_handlerLock;
 
 public:
-	virtual void HostContract(IContractHandlerPtr a_handler) override;
+	virtual void Host(IContractHandlerPtr a_handler) override;
 
 	void Adopt(const AContractHost &a_other);
 

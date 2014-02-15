@@ -83,7 +83,7 @@ inline CTcpDataConnection::Impl::Impl()
 {
 	m_disp = CDispatcher::Get();
 
-	auto l_evt = bufferevent_socket_new(m_disp->Evt(), -1, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_THREADSAFE);
+	auto l_evt = bufferevent_socket_new(m_disp->Evt(), -1, BEV_OPT_CLOSE_ON_FREE);
 	m_evt.reset(l_evt);
 
 	p_HookupEvt();
@@ -200,7 +200,7 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 
 			l_buff.Reset(l_len);
 			l_dest = l_buff.data();
-			l_end = l_buff.data();
+			l_end = l_buff.end();
 
 			l_reAlloc = false;
 		}
