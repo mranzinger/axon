@@ -134,7 +134,7 @@ demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
-		-levent
+		-levent -levent_pthreads
 
 demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
@@ -142,7 +142,7 @@ demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
-		-levent
+		-levent -levent_pthreads
 
 demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(SERVER_DEMO_SRC) -o $@ \
@@ -150,7 +150,7 @@ demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
-		-levent
+		-levent -levent_pthreads
 
 demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(SERVER_DEMO_SRC) -o $@ \
@@ -158,7 +158,7 @@ demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
-		-levent
+		-levent -levent_pthreads
 
 clean:
 	rm -rf lib

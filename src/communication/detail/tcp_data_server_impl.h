@@ -109,7 +109,7 @@ inline void CTcpDataServer::Impl::Startup(int a_port)
 	sockaddr_in l_in;
 	memset(&l_in, 0, sizeof(l_in));
 	l_in.sin_family = AF_INET;
-	l_in.sin_addr.s_addr = htonl(0);
+	l_in.sin_addr.s_addr = htonl(INADDR_ANY);
 	l_in.sin_port = htons(a_port);
 
 	m_listener.reset(

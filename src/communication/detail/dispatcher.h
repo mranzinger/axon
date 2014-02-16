@@ -16,8 +16,10 @@
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 #include <event2/dns.h>
+#include <event2/thread.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -28,6 +30,7 @@ class CDispatcher
 private:
 	typedef unique_ptr<event_base, void(*)(event_base*)> event_base_ptr;
 	typedef unique_ptr<evdns_base, void(*)(evdns_base*)> dns_base_ptr;
+	typedef unique_ptr<event, void(*)(event*)> event_ptr;
 
 	struct make_private {};
 
@@ -42,6 +45,8 @@ public:
 	CDispatcher(make_private)
 		: m_base(nullptr, p_FreeBase), m_dns(nullptr, p_FreeDns)
 	{
+		evthread_use_pthreads();
+
 		m_base.reset(event_base_new());
 
 		m_dns.reset(evdns_base_new(Evt(), 1));
@@ -50,26 +55,29 @@ public:
 	}
 	~CDispatcher()
 	{
-		event_base_loopexit(m_base.get(), nullptr);
+		timeval tfast{0,10};
 
-		// Terminate the loop
-		event_base_once(m_base.get(), -1, EV_TIMEOUT, [](evutil_socket_t, short, void*){}, this, nullptr);
+		event_ptr l_timeout(event_new(m_base.get(), -1, 0,
+				p_TermLoop, this), p_FreeEvt);
 
+		// Tell the running event loop to exit once it finishes
+		//event_base_loopexit(m_base.get(), nullptr);
+
+		event_add(l_timeout.get(), &tfast);
+		//event_add(l_timeout.get(), nullptr);
+
+		// Make the event start
+		event_active(l_timeout.get(), EV_TIMEOUT, 1);
+
+		//m_thread.detach();
 		m_thread.join();
 	}
 
 	static Ptr Get()
 	{
-		static weak_ptr<CDispatcher> s_weak;
+		static Ptr s_ptr = make_shared<CDispatcher>(make_private());
 
-		auto l_ret = s_weak.lock();
-
-		if (l_ret)
-			return l_ret;
-
-		l_ret = make_shared<CDispatcher>(make_private());
-		s_weak = l_ret;
-		return l_ret;
+		return s_ptr;
 	}
 
 	event_base *Evt() const { return m_base.get(); }
@@ -80,9 +88,16 @@ private:
 	{
 		cout << "Entering event dispatch loop." << endl;
 
-		event_base_dispatch(m_base.get());
+		int l_err = event_base_dispatch(m_base.get());
 
-		cout << "Exiting event dispatch loop." << endl;
+		cout << "Exiting event dispatch loop. Status: " << l_err << endl;
+	}
+	static void p_TermLoop(evutil_socket_t, short, void *p)
+	{
+		cout << "Term Loop Invoked." << endl;
+
+		//event_base_loopbreak(((CDispatcher*)p)->m_base.get());
+		event_base_loopexit(((CDispatcher*)p)->m_base.get(), nullptr);
 	}
 
 	static void p_FreeBase(event_base *a_evt)
@@ -92,6 +107,10 @@ private:
 	static void p_FreeDns(evdns_base *a_dns)
 	{
 		evdns_base_free(a_dns, 1);
+	}
+	static void p_FreeEvt(event *a_evt)
+	{
+		event_free(a_evt);
 	}
 };
 

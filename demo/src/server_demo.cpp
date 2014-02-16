@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	int l_port = 12345;
 
 	cout << "Running server on port " << l_port << endl;
-	cout << "Press [Enter] to terminate..." << endl;
+	cout << "Press q+[Enter] to terminate..." << endl;
 
 	auto l_server = CAxonServer::Create(make_shared<CTcpDataServer>(l_port));
 
@@ -38,7 +38,14 @@ int main(int argc, char *argv[])
 
 	l_server->HostContract(l_add, lb);
 
-	getchar();
+	//while (true)
+	//{
+		string s;
+		getline(cin,s);
+
+		//if (s == "q")
+		//	break;
+	//}
 
 	cout << "Terminating Server..." << endl;
 }
