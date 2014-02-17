@@ -187,7 +187,10 @@ inline void CTcpDataConnection::Impl::Send(const CBuffer& a_buff, condition_vari
 {
 	m_var = a_finishEvt;
 
-	bufferevent_write(m_evt.get(), a_buff.data(), a_buff.size());
+	int l_ret = bufferevent_write(m_evt.get(), a_buff.data(), a_buff.size());
+
+	if (l_ret != 0)
+		cout << "Failed to write socket data." << endl;
 }
 
 inline void CTcpDataConnection::Impl::SetReceiveHandler(DataReceivedHandler a_handler)
@@ -204,44 +207,30 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 {
 	evbuffer *l_input = bufferevent_get_input(a_evt);
 
-	CDataBuffer l_buff;
+	const size_t l_size = 1024;
+	CDataBuffer l_buff(l_size);
 
 	bool l_reAlloc = true;
 
-	char *l_dest = l_buff.data();
-	char *l_end = l_buff.end();
-
-	int n = 0;
-	do
+	while (true)
 	{
-		if (l_reAlloc)
+		int l_actual = evbuffer_remove(l_input, l_buff.data(), l_size);
+
+		if (l_actual == 0)
+			break;
+
+		if (l_actual < 0)
 		{
-			size_t l_len = evbuffer_get_length(l_input);
-
-			if (l_len == 0)
-				break;
-
-			l_buff.Reset(l_len);
-			l_dest = l_buff.data();
-			l_end = l_buff.end();
-
-			l_reAlloc = false;
+			cout << "Failed to drain buffer." << endl;
+			break;
 		}
 
-		n = evbuffer_remove(l_input, l_dest, l_end - l_dest);
+		l_buff.UpdateSize(l_actual);
 
-		l_dest += n;
-
-		if (l_dest == l_end)
-		{
-			m_rcvHandler(move(l_buff));
-			l_reAlloc = true;
-		}
-
-	} while (n > 0);
-
-	if (l_buff.size() > 0)
 		m_rcvHandler(move(l_buff));
+
+		l_buff.Reset(l_size);
+	};
 }
 
 inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short a_flags)

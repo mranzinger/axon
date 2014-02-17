@@ -54,11 +54,26 @@ util::CBuffer CDataBuffer::ToShared()
 	return ret;
 }
 
-
+void CDataBuffer::Reset()
+{
+	m_buff.reset();
+	m_buffSize = 0;
+}
 
 void CDataBuffer::Reset(size_t a_buffSize)
 {
+	if (!a_buffSize)
+	{
+		Reset();
+		return;
+	}
+
 	m_buff.reset(new char[a_buffSize]);
+	m_buffSize = a_buffSize;
+}
+
+void CDataBuffer::UpdateSize(size_t a_buffSize)
+{
 	m_buffSize = a_buffSize;
 }
 
