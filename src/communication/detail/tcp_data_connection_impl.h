@@ -22,13 +22,12 @@ typedef unique_ptr<bufferevent, void (*)(bufferevent*)> bufferevent_ptr;
 
 inline void s_FreeBuffEvt(bufferevent *a_evt)
 {
-	bufferevent_free(a_evt);
+	if (a_evt)
+		bufferevent_free(a_evt);
 }
 
 class CTcpDataConnection::Impl
 {
-public:
-
 private:
 	friend class CDispatcher;
 
@@ -51,7 +50,6 @@ public:
 	Impl();
 	Impl(const string &a_connectionString);
 	Impl(string a_hostName, int a_port);
-	Impl(bufferevent_ptr a_evt, string a_hostName, int a_port);
 
 
 	string ConnectionString() const;
@@ -64,6 +62,11 @@ public:
 	void Send(const CBuffer &a_buff, condition_variable *a_finishEvt);
 
 	void SetReceiveHandler(DataReceivedHandler a_handler);
+
+protected:
+	Impl(string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher);
+
+	void p_SetBufferEvent(bufferevent_ptr a_evt);
 
 private:
 	void p_WriteCallback(bufferevent *a_evt);
@@ -81,9 +84,9 @@ private:
 inline CTcpDataConnection::Impl::Impl()
 	: m_port(-1), m_var(nullptr), m_open(false), m_evt(nullptr, s_FreeBuffEvt)
 {
-	m_disp = CDispatcher::Get();
+	m_disp = CDispatcher::Get(1);
 
-	auto l_evt = bufferevent_socket_new(m_disp->Evt(), -1, BEV_OPT_CLOSE_ON_FREE);
+	auto l_evt = bufferevent_socket_new(m_disp->Base(), -1, BEV_OPT_CLOSE_ON_FREE);
 	m_evt.reset(l_evt);
 
 	p_HookupEvt();
@@ -103,10 +106,15 @@ inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port)
 		throw runtime_error("Unable to connect to the specified endpoint.");
 }
 
-inline CTcpDataConnection::Impl::Impl(bufferevent_ptr a_evt, string a_hostName, int a_port)
-	: m_port(a_port), m_var(nullptr), m_open(true), m_evt(move(a_evt)), m_hostName(move(a_hostName))
+inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher)
+	: m_port(a_port), m_var(nullptr), m_open(true), m_hostName(move(a_hostName)), m_evt(nullptr, s_FreeBuffEvt),
+	  m_disp(move(a_dispatcher))
 {
-	m_disp = CDispatcher::Get();
+}
+
+inline void CTcpDataConnection::Impl::p_SetBufferEvent(bufferevent_ptr a_evt)
+{
+	m_evt = move(a_evt);
 
 	p_HookupEvt();
 }

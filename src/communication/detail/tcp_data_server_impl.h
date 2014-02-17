@@ -84,7 +84,7 @@ private:
 inline CTcpDataServer::Impl::Impl()
 	: m_port(-1), m_listener(nullptr, s_FreeListener)
 {
-	m_dispatcher = CDispatcher::Get();
+	m_dispatcher = CDispatcher::Get(CDispatcher::OptimalNumThreads() + 1);
 }
 
 inline CTcpDataServer::Impl::Impl(const string& a_hostString)
@@ -113,9 +113,13 @@ inline void CTcpDataServer::Impl::Startup(int a_port)
 	l_in.sin_port = htons(a_port);
 
 	m_listener.reset(
-			evconnlistener_new_bind(m_dispatcher->Evt(), s_AcceptCallback, this, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, -1,
+			evconnlistener_new_bind(m_dispatcher->Base(0), s_AcceptCallback, this, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, -1,
 					(sockaddr*)&l_in, sizeof(l_in))
 	);
+
+	if (!m_listener)
+		throw runtime_error("Failed to bind server to the specified port. Verify that the port is not already in use.");
+
 	evconnlistener_set_error_cb(m_listener.get(), s_AcceptErrorCallback);
 }
 
@@ -126,7 +130,13 @@ inline string CTcpDataServer::Impl::HostString() const
 
 inline void CTcpDataServer::Impl::Shutdown()
 {
-	evconnlistener_disable(m_listener.get());
+	{
+		lock_guard<mutex> l_lock(m_connLock);
+		m_conns.clear();
+	}
+
+	// Terminate the dispatcher
+	m_dispatcher.reset();
 }
 
 inline size_t CTcpDataServer::Impl::NumClients() const
@@ -162,9 +172,8 @@ private:
 	CTcpDataServer::Impl *m_server;
 
 public:
-	CServerConnImpl(CTcpDataServer::Impl *a_server, bufferevent_ptr a_evt,
-			string a_hostName, int a_port)
-		: CTcpDataConnection::Impl(move(a_evt), move(a_hostName), a_port),
+	CServerConnImpl(CTcpDataServer::Impl *a_server, string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher)
+		: CTcpDataConnection::Impl(move(a_hostName), a_port, a_dispatcher),
 		  m_server(a_server)
 	{
 
@@ -192,11 +201,16 @@ public:
 			m_server->m_conns.erase(iter);
 		}
 
-		cout << "Cient Disconnected." << endl;
+		cout << "Client Disconnected." << endl;
 
 		m_server->m_disconnectedHandler(l_conn);
 	}
 	virtual bool IsServerClient() const override { return true; }
+
+	void EstablishEvt(bufferevent_ptr a_evt)
+	{
+		p_SetBufferEvent(move(a_evt));
+	}
 
 private:
 	void p_ThrowInvalid()
@@ -217,13 +231,7 @@ inline void CTcpDataServer::Impl::p_AcceptCallback(evconnlistener* a_listener,
 	else
 		l_port = ((sockaddr_in6*)a_address)->sin6_port;
 
-	bufferevent_ptr l_evt(
-			bufferevent_socket_new(evconnlistener_get_base(a_listener),
-				a_sock, BEV_OPT_CLOSE_ON_FREE),
-			s_FreeBuffEvt
-	);
-
-	std::unique_ptr<CServerConnImpl> l_impl(new CServerConnImpl(this, move(l_evt), l_scratch, l_port));
+	std::unique_ptr<CServerConnImpl> l_impl(new CServerConnImpl(this, l_scratch, l_port, m_dispatcher));
 
 	auto l_ptr = l_impl.get();
 
@@ -237,7 +245,17 @@ inline void CTcpDataServer::Impl::p_AcceptCallback(evconnlistener* a_listener,
 
 	cout << "Client Connected." << endl;
 
-	m_connectedHandler(l_conn);
+	if (m_connectedHandler)
+		m_connectedHandler(l_conn);
+
+	event_base *l_baseHandler = m_dispatcher->GetNextBase();
+
+	bufferevent_ptr l_evt(
+			bufferevent_socket_new(l_baseHandler, a_sock, BEV_OPT_CLOSE_ON_FREE),
+			s_FreeBuffEvt
+	);
+
+	l_ptr->EstablishEvt(move(l_evt));
 }
 
 inline void CTcpDataServer::Impl::p_AcceptErrorCallback(

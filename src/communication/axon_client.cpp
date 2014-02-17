@@ -37,9 +37,10 @@ CAxonClient::CAxonClient(const std::string& a_connectionString)
 }
 
 CAxonClient::CAxonClient(IDataConnection::Ptr a_connection)
-	: m_connection(move(a_connection))
 {
 	SetDefaultProtocol();
+
+	Connect(move(a_connection));
 }
 
 CAxonClient::CAxonClient(const std::string& a_connectionString, IProtocol::Ptr a_protocol)
@@ -53,7 +54,7 @@ CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_pro
 {
 	SetProtocol(move(a_protocol));
 
-	Connect(a_connection);
+	Connect(move(a_connection));
 }
 
 
@@ -128,7 +129,7 @@ CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
 	if (!m_connection || !m_connection->IsOpen())
 		throw runtime_error("Cannot send data over a dead connection.");
 
-	SendNonBlocking(a_message);
+	p_Send(a_message);
 
 	auto l_start = chrono::steady_clock::now();
 
@@ -176,12 +177,15 @@ void CAxonClient::SendNonBlocking(const CMessage& a_message)
 	// a response doesn't get generated
 	const_cast<CMessage&>(a_message).SetOneWay(true);
 
+	p_Send(a_message);
+}
+
+void CAxonClient::p_Send(const CMessage& a_message)
+{
 	CDataBuffer l_buffer = m_protocol->SerializeMessage(a_message);
 
 	m_connection->Send(l_buffer.ToShared());
 }
-
-
 
 void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 {
@@ -218,6 +222,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 		if (iter != m_pendingList.end())
 		{
 			(*iter)->IncomingMessage = a_message;
+			l_handled = true;
 		}
 	}
 

@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
 	auto lb = [] (int a, int b) -> int
 			{
-				cout << "Adding " << a << " and " << b << endl;
+				//cout << a << " + " << b << " = " << (a + b) << endl;
 
 				return a + b;
 			};

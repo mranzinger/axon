@@ -57,6 +57,7 @@ protected:
 	virtual bool TryHandleWithServer(const CMessage &a_msg, CMessage::Ptr &a_out) const;
 
 private:
+	void p_Send(const CMessage &a_message);
 
 	void p_OnDataReceived(CDataBuffer a_buffer);
 	void p_OnMessageReceived(const CMessage::Ptr &a_message);

@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <random>
 
 #include "serialization/master.h"
 
@@ -31,11 +32,20 @@ int main(int argc, char *argv[])
 
 	cout << "Connected!" << endl;
 
-	cout << "Adding 1 and 2" << endl;
+	srand(42);
 
-	int l_val = l_client->Send(l_add, 1, 2);
+	int l_sum = 0;
+	for (size_t i = 0; i < 10000000; ++i)
+	{
+		if ((i % 10000) == 0)
+		{
+			cout << "Iteration " << i << endl;
+		}
 
-	cout << "Result: " << l_val << endl;
+		l_sum += l_client->Send(l_add, rand(), rand());
+	}
+
+	cout << "Sum of randoms: " << l_sum << endl;
 
 	return 0;
 }
