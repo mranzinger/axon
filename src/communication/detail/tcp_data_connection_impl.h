@@ -43,6 +43,8 @@ private:
 	condition_variable *m_var;
 
 	atomic<bool> m_open;
+	mutex m_openLock;
+	condition_variable m_openCV;
 
 public:
 	virtual ~Impl() { }
@@ -146,10 +148,23 @@ inline bool CTcpDataConnection::Impl::Connect(const string& a_connectionString)
 
 inline bool CTcpDataConnection::Impl::Connect(string a_hostName, int a_port)
 {
+	unique_lock<mutex> l_lock(m_openLock);
+
 	int l_err = bufferevent_socket_connect_hostname(m_evt.get(), m_disp->Dns(),
 			AF_UNSPEC, a_hostName.c_str(), a_port);
 
 	if (l_err)
+		return false;
+
+	// Wait for up to 10 seconds for the connection to open
+	bool l_conn =
+			m_openCV.wait_for(l_lock, chrono::seconds(10),
+					[this] () -> bool
+					{
+						return m_open;
+					});
+
+	if (!l_conn)
 		return false;
 
 	m_hostName = move(a_hostName);
@@ -235,6 +250,12 @@ inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short 
 
 	if (a_flags & BEV_EVENT_CONNECTED)
 	{
+		// Snag the lock to ensure synchronization
+		{
+			lock_guard<mutex> l_lock(m_openLock);
+		}
+		m_openCV.notify_all();
+
 		m_open = true;
 	}
 	else if (a_flags & BEV_EVENT_ERROR)
