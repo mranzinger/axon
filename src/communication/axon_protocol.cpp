@@ -77,6 +77,11 @@ CDataBuffer CAxonProtocol::SerializeMessage(const CMessage& a_msg) const
 
 void CAxonProtocol::ProcessInternal(CDataBuffer a_buffer)
 {
+	if (m_currState != APState::Anchor)
+	{
+		cout << "Entering process function in state " << (int)m_currState << endl;
+	}
+
 	char *l_curr = a_buffer.Data();
 	char *l_end = a_buffer.end();
 

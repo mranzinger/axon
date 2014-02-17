@@ -130,13 +130,8 @@ inline string CTcpDataServer::Impl::HostString() const
 
 inline void CTcpDataServer::Impl::Shutdown()
 {
-	{
-		lock_guard<mutex> l_lock(m_connLock);
-		m_conns.clear();
-	}
-
-	// Terminate the dispatcher
-	m_dispatcher.reset();
+	lock_guard<mutex> l_lock(m_connLock);
+	m_conns.clear();
 }
 
 inline size_t CTcpDataServer::Impl::NumClients() const

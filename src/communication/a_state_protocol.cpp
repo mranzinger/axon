@@ -13,7 +13,7 @@ namespace axon { namespace communication {
 void AStateProtocol::Process(CDataBuffer a_buffer)
 {
 	{
-		lock_guard<mutex> l_lock(m_queueLock);
+		//lock_guard<mutex> l_lock(m_queueLock);
 		m_buffQueue.push(move(a_buffer));
 	}
 
@@ -23,17 +23,17 @@ void AStateProtocol::Process(CDataBuffer a_buffer)
 void AStateProtocol::TryProcess(bool a_tryOnExit)
 {
 	{
-		unique_lock<mutex> l_procLock(m_procLock, try_to_lock);
+		//unique_lock<mutex> l_procLock(m_procLock, try_to_lock);
 
-		if (!l_procLock.owns_lock())
-			return;
+		//if (!l_procLock.owns_lock())
+		//	return;
 
 		while (true)
 		{
 			CDataBuffer l_nextBuff;
 
 			{
-				lock_guard<mutex> l_qLock(m_queueLock);
+				//lock_guard<mutex> l_qLock(m_queueLock);
 				if (m_buffQueue.empty())
 					break;
 				l_nextBuff = move(m_buffQueue.front());

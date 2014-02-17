@@ -261,12 +261,12 @@ inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short 
 	else if (a_flags & BEV_EVENT_ERROR)
 	{
 		l_close = true;
-		// TODO: Log
+		cout << "Error on connection" << endl;
 	}
 	else if (a_flags & BEV_EVENT_EOF)
 	{
 		l_close = true;
-
+		cout << "Client Closed." << endl;
 	}
 
 	if (l_close)

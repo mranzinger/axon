@@ -63,7 +63,8 @@ bool AContractHost::RemoveContract(const std::string& a_action)
 
 IContractHandlerPtr AContractHost::FindHandler(const std::string& a_action) const
 {
-	lock_guard<mutex> l_lock(m_handlerLock);
+	// TODO: This needs to be brought back
+	//lock_guard<mutex> l_lock(m_handlerLock);
 
 	auto iter = m_handlers.find(a_action);
 
