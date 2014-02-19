@@ -120,14 +120,17 @@ void CAxonClient::SetProtocol(IProtocol::Ptr a_protocol)
 
 CMessage::Ptr CAxonClient::Send(const CMessage& a_message)
 {
-	// Default timeout is 1 minute
-	return Send(a_message, 60000);
+
+	return Send(a_message, 0);
 }
 
 CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
 {
 	if (!m_connection || !m_connection->IsOpen())
 		throw runtime_error("Cannot send data over a dead connection.");
+	// Default timeout is 1 minute
+	if (a_timeout == 0)
+		a_timeout = 60000;
 
 	p_Send(a_message);
 

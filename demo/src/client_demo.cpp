@@ -34,6 +34,8 @@ int main(int argc, char *argv[])
 
 	srand(42);
 
+	int l_toCt = 0;
+
 	int l_sum = 0;
 	for (size_t i = 0; i < 10000000; ++i)
 	{
@@ -42,10 +44,19 @@ int main(int argc, char *argv[])
 			cout << "Iteration " << i << endl;
 		}
 
-		l_sum += l_client->Send(l_add, rand(), rand());
+		try
+		{
+			l_sum += l_client->Send(l_add, 100, rand(), rand());
+		}
+		catch (CTimeoutException &ex)
+		{
+			++l_toCt;
+			cout << "Timeout Occurred. Count: " << l_toCt << endl;
+		}
 	}
 
 	cout << "Sum of randoms: " << l_sum << endl;
+	cout << "Num Timeouts: " << l_toCt << endl;
 
 	return 0;
 }
