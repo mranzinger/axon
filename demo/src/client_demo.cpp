@@ -7,6 +7,7 @@
 #include <iostream>
 #include <assert.h>
 #include <random>
+#include <unistd.h>
 
 #include "serialization/master.h"
 
@@ -34,6 +35,12 @@ int main(int argc, char *argv[])
 
 	srand(42);
 
+	int l_sleepTime = 0;
+	if (argc == 2)
+		l_sleepTime = atoi(argv[1]);
+
+	cout << "Sleep Interval: " << l_sleepTime << endl;
+
 	int l_toCt = 0;
 
 	int l_sum = 0;
@@ -52,6 +59,11 @@ int main(int argc, char *argv[])
 		{
 			++l_toCt;
 			cout << "Timeout Occurred. Count: " << l_toCt << endl;
+		}
+
+		if (l_sleepTime)
+		{
+			usleep(l_sleepTime * 1000);
 		}
 	}
 

@@ -24,6 +24,8 @@ private:
 	std::unique_ptr<Impl> m_impl;
 
 public:
+	typedef std::shared_ptr<CTcpDataConnection> Ptr;
+
 	CTcpDataConnection();
 	CTcpDataConnection(const std::string &a_connectionString);
 	CTcpDataConnection(std::string a_hostName, int a_port);
@@ -44,6 +46,8 @@ public:
 	virtual void Send(const util::CBuffer &buff, std::condition_variable *finishEvt);
 
 	virtual void SetReceiveHandler(DataReceivedHandler handler);
+
+	Impl *GetImpl() const { return m_impl.get(); }
 };
 
 }

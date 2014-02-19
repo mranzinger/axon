@@ -7,6 +7,8 @@
 #ifndef TCP_DATA_CONNECTION_IMPL_H_
 #define TCP_DATA_CONNECTION_IMPL_H_
 
+#include <chrono>
+
 #include "communication/tcp/tcp_data_connection.h"
 
 #include "dispatcher.h"
@@ -14,11 +16,14 @@
 #include "util/string_convert.h"
 
 using namespace std;
+using namespace std::chrono;
 using namespace axon::util;
 
 namespace axon { namespace communication { namespace tcp {
 
 typedef unique_ptr<bufferevent, void (*)(bufferevent*)> bufferevent_ptr;
+
+typedef microseconds dirus;
 
 inline void s_FreeBuffEvt(bufferevent *a_evt)
 {
@@ -46,6 +51,9 @@ private:
 	mutex m_openLock;
 	condition_variable m_openCV;
 
+protected:
+	atomic<size_t> m_procTime;
+
 public:
 	virtual ~Impl() { }
 
@@ -65,10 +73,20 @@ public:
 
 	void SetReceiveHandler(DataReceivedHandler a_handler);
 
+	bufferevent *GetBufferEvent() const { return m_evt.get(); }
+
+	size_t GetProcTime() const { return m_procTime; }
+
+	void ResetProcTime() { m_procTime = size_t(0); }
+
 protected:
 	Impl(string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher);
 
 	void p_SetBufferEvent(bufferevent_ptr a_evt);
+
+	virtual void UpdateProcTime(const dirus &a_dur);
+
+
 
 private:
 	void p_WriteCallback(bufferevent *a_evt);
@@ -84,7 +102,7 @@ private:
 
 
 inline CTcpDataConnection::Impl::Impl()
-	: m_port(-1), m_var(nullptr), m_open(false), m_evt(nullptr, s_FreeBuffEvt)
+	: m_port(-1), m_var(nullptr), m_open(false), m_evt(nullptr, s_FreeBuffEvt), m_procTime(0)
 {
 	m_disp = CDispatcher::Get(1);
 
@@ -110,7 +128,7 @@ inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port)
 
 inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher)
 	: m_port(a_port), m_var(nullptr), m_open(true), m_hostName(move(a_hostName)), m_evt(nullptr, s_FreeBuffEvt),
-	  m_disp(move(a_dispatcher))
+	  m_disp(move(a_dispatcher)), m_procTime(0)
 {
 }
 
@@ -205,6 +223,8 @@ inline void CTcpDataConnection::Impl::p_WriteCallback(bufferevent* a_evt)
 
 inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 {
+	auto l_start = high_resolution_clock::now();
+
 	evbuffer *l_input = bufferevent_get_input(a_evt);
 
 	const size_t l_size = 1024;
@@ -231,6 +251,10 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 
 		l_buff.Reset(l_size);
 	};
+
+	auto l_end = high_resolution_clock::now();
+
+	UpdateProcTime(duration_cast<microseconds>(l_end - l_start));
 }
 
 inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short a_flags)
@@ -264,6 +288,11 @@ inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short 
 	}
 }
 
+inline void CTcpDataConnection::Impl::UpdateProcTime(const dirus& a_dur)
+{
+	m_procTime += a_dur.count();
+}
+
 inline void CTcpDataConnection::Impl::s_WriteCallback(bufferevent* a_evt, void* a_ptr)
 {
 	((Impl*)a_ptr)->p_WriteCallback(a_evt);
@@ -273,8 +302,6 @@ inline void CTcpDataConnection::Impl::s_ReadCallback(bufferevent* a_evt, void* a
 {
 	((Impl*)a_ptr)->p_ReadCallback(a_evt);
 }
-
-
 
 inline void CTcpDataConnection::Impl::s_EventCallback(bufferevent* a_evt, short a_flags, void* a_ptr)
 {

@@ -26,12 +26,27 @@ using namespace std;
 
 namespace axon { namespace communication { namespace tcp {
 
+typedef unique_ptr<event_base, void(*)(event_base*)> event_base_ptr;
+typedef unique_ptr<evdns_base, void(*)(evdns_base*)> dns_base_ptr;
+typedef unique_ptr<event, void(*)(event*)> event_ptr;
+
+inline void FreeEventBase(event_base *a_evt)
+{
+	event_base_free(a_evt);
+}
+inline void FreeDnsBase(evdns_base *a_dns)
+{
+	evdns_base_free(a_dns, 1);
+}
+inline void FreeEvt(event *a_evt)
+{
+	event_free(a_evt);
+}
+
 class CDispatcher
 {
 private:
-	typedef unique_ptr<event_base, void(*)(event_base*)> event_base_ptr;
-	typedef unique_ptr<evdns_base, void(*)(evdns_base*)> dns_base_ptr;
-	typedef unique_ptr<event, void(*)(event*)> event_ptr;
+
 
 	struct make_private {};
 
@@ -62,13 +77,13 @@ public:
 
 		for (size_t i = 0; i < m_maxThreads; ++i)
 		{
-			m_bases.emplace_back(event_base_new(), p_FreeBase);
+			m_bases.emplace_back(event_base_new(), FreeEventBase);
 
-			m_dnss.emplace_back(evdns_base_new(m_bases.back().get(), 1), p_FreeDns);
+			m_dnss.emplace_back(evdns_base_new(m_bases.back().get(), 1), FreeDnsBase);
 
 			// Create and add an event that will cause the loop to terminate
 			m_kills.emplace_back(event_new(Base(i), -1, EV_TIMEOUT | EV_PERSIST, p_TermLoop, Base(i)),
-					p_FreeEvt);
+					FreeEvt);
 
 			event_add(m_kills.back().get(), nullptr);
 
@@ -149,18 +164,7 @@ private:
 		event_base_loopexit((event_base*)p, nullptr);
 	}
 
-	static void p_FreeBase(event_base *a_evt)
-	{
-		event_base_free(a_evt);
-	}
-	static void p_FreeDns(evdns_base *a_dns)
-	{
-		evdns_base_free(a_dns, 1);
-	}
-	static void p_FreeEvt(event *a_evt)
-	{
-		event_free(a_evt);
-	}
+
 };
 
 } } }
