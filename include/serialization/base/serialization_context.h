@@ -1,7 +1,7 @@
 /*
  * File description: serialization_context.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef SERIALIZATION_CONTEXT_H_
@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "detail/serialization_context_impl.h"
+#include "../dll_export.h"
 
 namespace axon { namespace serialization {
 
@@ -20,7 +21,7 @@ enum class SerializationFlags : uint32_t
 	Compress = 0x2
 };
 
-class CSerializationContext
+class AXON_SERIALIZE_API CSerializationContext
 {
 private:
 	typedef detail::CSerializationContextImpl Impl;
@@ -85,7 +86,7 @@ public:
 	}
 };
 
-class CSerFlagScope
+class AXON_SERIALIZE_API CSerFlagScope
 {
 private:
 	const CSerializationContext *m_context;

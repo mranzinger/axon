@@ -1,15 +1,15 @@
 
 /*
  * File description: xml_serializer.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
-#include "format/xml_serializer.h"
+#include "serialization/format/xml_serializer.h"
 
 #include <sstream>
 
-#include "pugixml/pugixml.hpp"
+#include "pugixml.hpp"
 
 using namespace std;
 using namespace pugi;
@@ -86,8 +86,8 @@ void WriteBuffer(xml_node a_node, const CBufferData &a_data)
 
 	std::string l_encoded = util::CBase64::Encode(a_data.GetBuffer().Data(), a_data.GetBuffer().Size());
 
-	a_node.append_attribute("_enclen").set_value((uint)l_encoded.size());
-	a_node.append_attribute("_rawlen").set_value((uint)a_data.GetBuffer().Size());
+	a_node.append_attribute("_enclen").set_value((uint32_t)l_encoded.size());
+	a_node.append_attribute("_rawlen").set_value((uint32_t)a_data.GetBuffer().Size());
 	a_node.append_attribute("_compressed").set_value(false);
 
 	a_node.append_child(node_pcdata).set_value(l_encoded.c_str());

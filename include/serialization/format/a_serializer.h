@@ -1,7 +1,7 @@
 /*
  * File description: i_serializer.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef A_SERIALIZER_H_
@@ -15,7 +15,7 @@
 
 namespace axon { namespace serialization {
 
-class ASerializer
+class AXON_SERIALIZE_API ASerializer
 {
 public:
 	typedef std::shared_ptr<ASerializer> Ptr;

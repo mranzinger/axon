@@ -10,9 +10,11 @@
 
 #include <stdexcept>
 
+#include "dll_export.h"
+
 namespace axon { namespace communication {
 
-class CFaultException
+class AXON_COMMUNICATE_API CFaultException
 	: public std::runtime_error
 {
 private:

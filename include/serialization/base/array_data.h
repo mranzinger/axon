@@ -1,7 +1,7 @@
 /*
  * File description: coll_data.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef COLL_DATA_H_
@@ -13,7 +13,7 @@
 
 namespace axon { namespace serialization {
 
-class CArrayData
+class AXON_SERIALIZE_API CArrayData
 	: public AData
 {
 private:

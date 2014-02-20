@@ -1,7 +1,7 @@
 /*
  * File description: struct_data.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef STRUCT_DATA_H_
@@ -13,9 +13,10 @@
 
 #include "a_data.h"
 
+
 namespace axon { namespace serialization {
 
-class CStructData
+class AXON_SERIALIZE_API CStructData
 	: public AData
 {
 private:

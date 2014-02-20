@@ -1,7 +1,7 @@
 /*
  * File description: axon_client.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #include "communication/messaging/axon_client.h"
@@ -98,7 +98,16 @@ void CAxonClient::Connect(IDataConnection::Ptr a_connection)
 
 	if (m_connection)
 	{
+#ifdef IS_WINDOWS
+		int l_hack;
+		m_connection->SetReceiveHandler(
+			[this, l_hack](CDataBuffer a_buf)
+			{
+				p_OnDataReceived(move(a_buf));
+			});
+#else
 		m_connection->SetReceiveHandler(bind(&CAxonClient::p_OnDataReceived, this, placeholders::_1));
+#endif
 	}
 }
 

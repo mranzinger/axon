@@ -1,7 +1,7 @@
 /*
  * File description: i_protocol_factory.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef I_PROTOCOL_FACTORY_H_
@@ -14,7 +14,7 @@
 
 namespace axon { namespace communication {
 
-class IProtocolFactory
+class AXON_COMMUNICATE_API IProtocolFactory
 {
 public:
 	typedef std::shared_ptr<IProtocolFactory> Ptr;
@@ -58,7 +58,7 @@ IProtocolFactory::Ptr GetProtocolFactory(Args &&...a_args)
 	return std::make_shared<CProtocolFactory<Protocol, Args...>>(std::forward<Args>(a_args)...);
 }
 
-IProtocolFactory::Ptr GetDefaultProtocolFactory();
+AXON_COMMUNICATE_API IProtocolFactory::Ptr GetDefaultProtocolFactory();
 
 } }
 

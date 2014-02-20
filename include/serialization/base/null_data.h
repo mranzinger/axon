@@ -1,7 +1,7 @@
 /*
  * File description: null_data.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef NULL_DATA_H_
@@ -15,7 +15,7 @@ namespace axon { namespace serialization {
 	ADATA_CASTER_FN_IMPL(name, type) { \
 		return type(); }
 
-class CNullData
+class AXON_SERIALIZE_API CNullData
 	: public AData
 {
 public:

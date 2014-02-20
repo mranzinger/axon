@@ -1,7 +1,7 @@
 /*
  * File description: axon_server.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef AXON_SERVER_H_
@@ -19,7 +19,7 @@ namespace axon { namespace communication {
 class CAxonServerConnection;
 typedef std::shared_ptr<CAxonServerConnection> CAxonServerConnectionPtr;
 
-class CAxonServer
+class AXON_COMMUNICATE_API CAxonServer
 	: public AContractHost,
 	  public std::enable_shared_from_this<CAxonServer>
 {

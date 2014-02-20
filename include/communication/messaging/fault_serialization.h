@@ -13,8 +13,8 @@
 
 namespace axon { namespace serialization {
 
-void WriteStruct(const CStructWriter &a_writer, const communication::CFaultException &a_ex);
-void ReadStruct(const CStructReader &a_reader, communication::CFaultException &a_ex);
+AXON_COMMUNICATE_API void WriteStruct(const CStructWriter &a_writer, const communication::CFaultException &a_ex);
+AXON_COMMUNICATE_API void ReadStruct(const CStructReader &a_reader, communication::CFaultException &a_ex);
 
 } }
 

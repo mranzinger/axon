@@ -16,9 +16,11 @@
 #include "util/buffer.h"
 #include "messaging/data_buffer.h"
 
+#include "dll_export.h"
+
 namespace axon { namespace communication {
 
-class IDataConnection
+class AXON_COMMUNICATE_API IDataConnection
 {
 public:
 	typedef std::shared_ptr<IDataConnection> Ptr;

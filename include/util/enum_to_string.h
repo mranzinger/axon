@@ -13,8 +13,13 @@
 #include <stdexcept>
 #include <iostream>
 #include "string_convert.h"
+#include "dll_export.h"
 
 #include "detail/make_unique.h"
+
+#ifdef IS_WINDOWS
+#define strcasecmp _stricmp
+#endif
 
 namespace axon { namespace util {
 
@@ -110,10 +115,9 @@ private:
 #define DEFAULT(EnumValue) (EnumValue)(EnumValue, #EnumValue)
 #define DEFMAP(EnumValue, EnumString) (EnumValue)(EnumValue, EnumString)
 
-#define ENUM_IO_FWD(enumType) \
-	std::ostream &operator<<(std::ostream &out, enumType tp); \
-	std::istream &operator>>(std::istream &in, enumType &tp)
-
+#define ENUM_IO_FWD(enumType, linkageMacro) \
+	linkageMacro std::ostream &operator<<(std::ostream &out, enumType tp); \
+	linkageMacro std::istream &operator>>(std::istream &in, enumType &tp)
 
 
 #endif /* ENUM_TO_STRING_H_ */

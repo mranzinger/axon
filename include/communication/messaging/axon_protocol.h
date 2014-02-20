@@ -1,7 +1,7 @@
 /*
  * File description: axon_protocol.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef AXON_PROTOCOL_H_
@@ -14,7 +14,7 @@ namespace axon { namespace communication {
 
 enum class APState;
 
-class CAxonProtocol
+class AXON_COMMUNICATE_API CAxonProtocol
 	: public AStateProtocol
 {
 private:

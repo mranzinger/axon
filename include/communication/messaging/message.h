@@ -15,6 +15,8 @@
 #include "util/buffer.h"
 #include "util/enum_to_string.h"
 
+#include "../dll_export.h"
+
 namespace axon { namespace communication {
 
 enum class MessageType
@@ -23,9 +25,9 @@ enum class MessageType
 	Fault
 };
 
-ENUM_IO_FWD(MessageType);
+ENUM_IO_FWD(MessageType, AXON_COMMUNICATE_API);
 
-class CMessage
+class AXON_COMMUNICATE_API CMessage
 {
 private:
 	serialization::CStructData::Ptr m_message;

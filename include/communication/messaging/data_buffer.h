@@ -10,9 +10,11 @@
 
 #include "util/buffer.h"
 
+#include "../dll_export.h"
+
 namespace axon { namespace communication {
 
-class CDataBuffer
+class AXON_COMMUNICATE_API CDataBuffer
 {
 public:
 	typedef std::unique_ptr<char[]> TPtr;

@@ -1,10 +1,10 @@
 /*
  * File description: json_serializer.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
-#include "format/json_serializer.h"
+#include "serialization/format/json_serializer.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
@@ -298,6 +298,8 @@ AData::Ptr ReadPrimArray(const rapidjson::Document &a_doc, const rapidjson::Valu
 	READ_PRIM(Bool, bool);
 	READ_PRIM(String, std::string);
 	}
+
+	throw std::runtime_error("Invalid primitive array type.");
 
 #undef READ_PRIM
 }

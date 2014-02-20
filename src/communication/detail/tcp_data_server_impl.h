@@ -1,7 +1,7 @@
 /*
  * File description: tcp_data_server_impl.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef TCP_DATA_SERVER_IMPL_H_
@@ -22,7 +22,15 @@
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
+
+#ifdef IS_WINDOWS
+#include <WinSock2.h>
+#include <Ws2tcpip.h>
+
+#define inet_ntop InetNtop
+#else
 #include <arpa/inet.h>
+#endif
 
 #include "util/string_convert.h"
 
@@ -246,7 +254,7 @@ inline void CTcpDataServer::Impl::p_AcceptErrorCallback(
 }
 
 inline void CTcpDataServer::Impl::s_AcceptCallback(evconnlistener* a_listener,
-		int a_sock, sockaddr* a_address, int a_sockLen, void* a_ptr)
+		evutil_socket_t a_sock, sockaddr* a_address, int a_sockLen, void* a_ptr)
 {
 	((Impl*)a_ptr)->p_AcceptCallback(a_listener, a_sock, a_address, a_sockLen);
 }

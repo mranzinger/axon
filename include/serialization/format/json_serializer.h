@@ -1,7 +1,7 @@
 /*
  * File description: json_serializer.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef JSON_SERIALIZER_H_
@@ -12,7 +12,7 @@
 
 namespace axon { namespace serialization {
 
-class CJsonSerializer
+class AXON_SERIALIZE_API CJsonSerializer
 	: public ASerializer
 {
 public:

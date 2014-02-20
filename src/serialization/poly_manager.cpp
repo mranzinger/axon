@@ -1,10 +1,10 @@
 /*
  * File description: poly_manager.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
-#include "base/poly_manager.h"
+#include "serialization/base/poly_manager.h"
 
 namespace axon { namespace serialization {
 

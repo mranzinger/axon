@@ -1,7 +1,7 @@
 /*
  * File description: base64.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef BASE64_H_
@@ -10,9 +10,11 @@
 #include <vector>
 #include <string>
 
+#include "dll_export.h"
+
 namespace axon { namespace util {
 
-class CBase64
+class AXON_UTIL_API CBase64
 {
 public:
 	typedef unsigned char byte;

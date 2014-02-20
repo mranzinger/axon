@@ -1,7 +1,7 @@
 /*
  * File description: serialize_buffer.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef SERIALIZE_BUFFER_H_
@@ -12,7 +12,7 @@
 namespace axon { namespace serialization {
 
 template<>
-struct CSerializer<util::CBuffer>
+struct AXON_SERIALIZE_API CSerializer<util::CBuffer>
 {
 public:
 	static AData::Ptr Get(const util::CBuffer &a_val, const CSerializationContext &a_context)

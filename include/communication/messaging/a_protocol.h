@@ -1,7 +1,7 @@
 /*
  * File description: a_protocol.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef A_PROTOCOL_H_
@@ -11,7 +11,7 @@
 
 namespace axon { namespace communication {
 
-class AProtocol
+class AXON_COMMUNICATE_API AProtocol
 	: public virtual IProtocol
 {
 private:

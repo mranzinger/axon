@@ -1,7 +1,7 @@
 /*
  * File description: a_base.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef A_BASE_H_
@@ -26,7 +26,7 @@ namespace axon { namespace serialization {
 template<typename T>
 struct ADataCaster;
 
-class AData
+class AXON_SERIALIZE_API AData
 {
 private:
 	const DataType m_type;

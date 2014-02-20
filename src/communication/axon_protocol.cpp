@@ -1,7 +1,7 @@
 /*
  * File description: axon_protocol.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #include "communication/messaging/axon_protocol.h"

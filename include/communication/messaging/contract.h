@@ -1,7 +1,7 @@
 /*
  * File description: contract.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef CONTRACT_H_
@@ -11,6 +11,7 @@
 
 #include "message.h"
 #include "function_invoker.h"
+#include "serialization/master.h"
 #include "util/uuid.h"
 
 namespace axon { namespace communication {

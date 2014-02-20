@@ -1,7 +1,7 @@
 /*
  * File description: axon_serializer.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #include "serialization/format/axon_serializer.h"
@@ -81,7 +81,7 @@ size_t DecodeSize(const char *&a_buff)
 }
 
 template<typename T>
-constexpr size_t CalcValueSizeImpl(const typename enable_if<is_trivial<T>::value, T>::type &)
+size_t CalcValueSizeImpl(const typename enable_if<is_trivial<T>::value, T>::type &)
 {
 	return sizeof(T);
 }

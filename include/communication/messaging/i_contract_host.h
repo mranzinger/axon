@@ -1,7 +1,7 @@
 /*
  * File description: i_contract_host.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef I_CONTRACT_HOST_H_
@@ -17,7 +17,7 @@ typedef std::shared_ptr<IContractHandler> IContractHandlerPtr;
 template<typename ContractType, typename HandlerType>
 class CContractHandler;
 
-class IContractHost
+class AXON_COMMUNICATE_API IContractHost
 {
 public:
 	typedef std::shared_ptr<IContractHost> Ptr;
@@ -46,7 +46,7 @@ public:
 	virtual IContractHandlerPtr FindHandler(const std::string &a_action) const = 0;
 };
 
-class IContractHandler
+class AXON_COMMUNICATE_API IContractHandler
 {
 public:
 	virtual ~IContractHandler() { }
@@ -78,7 +78,7 @@ public:
 	}
 };
 
-class CScopedContractHandler
+class AXON_COMMUNICATE_API CScopedContractHandler
 {
 private:
 	IContractHost &m_host;

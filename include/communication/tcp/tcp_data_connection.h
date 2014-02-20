@@ -1,7 +1,7 @@
 /*
  * File description: tcp_data_connection.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef TCP_DATA_CONNECTION_H_
@@ -14,7 +14,7 @@
 
 namespace axon { namespace communication { namespace tcp {
 
-class CTcpDataConnection
+class AXON_COMMUNICATE_API CTcpDataConnection
 	: public virtual IDataConnection
 {
 public:

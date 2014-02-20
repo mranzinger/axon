@@ -1,7 +1,7 @@
 /*
  * File description: i_axon_client.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef I_AXON_CLIENT_H_
@@ -13,7 +13,7 @@
 
 namespace axon { namespace communication {
 
-class IAxonClient
+class AXON_COMMUNICATE_API IAxonClient
 	: public virtual IContractHost
 {
 public:

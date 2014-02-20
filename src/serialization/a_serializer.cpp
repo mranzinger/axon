@@ -1,10 +1,10 @@
 /*
  * File description: a_serializer.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
-#include "format/a_serializer.h"
+#include "serialization/format/a_serializer.h"
 
 namespace axon { namespace serialization {
 

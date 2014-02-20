@@ -1,7 +1,7 @@
 /*
  * File description: i_protocol.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef I_PROTOCOL_H_
@@ -14,7 +14,7 @@
 
 namespace axon { namespace communication {
 
-class IProtocol
+class AXON_COMMUNICATE_API IProtocol
 {
 public:
 	typedef std::unique_ptr<IProtocol> Ptr;
@@ -30,7 +30,7 @@ public:
 	virtual void SetHandler(HandlerFn a_fn) = 0;
 };
 
-IProtocol::Ptr GetDefaultProtocol();
+AXON_COMMUNICATE_API IProtocol::Ptr GetDefaultProtocol();
 
 } }
 

@@ -1,7 +1,7 @@
 /*
  * File description: struct_binder.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef STRUCT_BINDER_H_
@@ -28,13 +28,13 @@ template<typename T>
 detail::unspecialized BindStruct(const CStructBinder &a_binder, T &a_val);
 
 template<typename T>
-auto WriteStruct(const CStructWriter &a_writer, const T &a_val) -> decltype(BindStruct(&a_writer, const_cast<T&>(a_val)))
+auto WriteStruct(const CStructWriter &a_writer, const T &a_val) -> decltype(BindStruct(*(CStructBinder*)nullptr, *(T*)nullptr))
 {
 	return BindStruct(&a_writer, const_cast<T&>(a_val));
 }
 
 template<typename T>
-auto ReadStruct(const CStructReader &a_reader, T &a_val) -> decltype(BindStruct(&a_reader, a_val))
+auto ReadStruct(const CStructReader &a_reader, T &a_val) -> decltype(BindStruct(*(CStructBinder*)nullptr, *(T*)nullptr))
 {
 	return BindStruct(&a_reader, a_val);
 }
@@ -45,7 +45,7 @@ AData::Ptr Serialize(const T &, const CSerializationContext &);
 template<typename T>
 T Deserialize(const AData &a_data);
 
-class CStructWriter
+class AXON_SERIALIZE_API CStructWriter
 {
 private:
 	CStructData *m_data;
@@ -66,7 +66,7 @@ public:
 	}
 };
 
-class CStructReader
+class AXON_SERIALIZE_API CStructReader
 {
 private:
 	const CStructData *m_data;
@@ -92,7 +92,7 @@ public:
 	}
 };
 
-class CStructBinder
+class AXON_SERIALIZE_API CStructBinder
 {
 private:
 	const CStructWriter *m_writer = nullptr;

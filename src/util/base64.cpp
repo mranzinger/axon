@@ -1,9 +1,9 @@
 /*
  * File description: base64.cpp
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
-#include "base64.h"
+#include "util/base64.h"
 #include <iostream>
 
 namespace axon { namespace util {

@@ -1,7 +1,7 @@
 /*
  * File description: xml_serializer.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef XML_SERIALIZER_H_
@@ -11,7 +11,7 @@
 
 namespace axon { namespace serialization {
 
-class CXmlSerializer
+class AXON_SERIALIZE_API CXmlSerializer
 	: public ASerializer
 {
 public:

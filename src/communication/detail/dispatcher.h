@@ -1,7 +1,7 @@
 /*
  * File description: dispatcher.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef DISPATCHER_H_
@@ -12,14 +12,22 @@
 #include <atomic>
 #include <iostream>
 
+#include "dll_export.h"
+
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 #include <event2/dns.h>
 #include <event2/thread.h>
-#include <sys/socket.h>
+
 #include <string.h>
+
+#ifdef IS_WINDOWS
+#include <WinSock2.h>
+#else
+#include <sys/socket.h>
 #include <unistd.h>
+#endif
 
 using namespace std;
 
@@ -45,7 +53,14 @@ public:
 	CDispatcher(make_private)
 		: m_base(nullptr, p_FreeBase), m_dns(nullptr, p_FreeDns)
 	{
+#ifdef IS_WINDOWS
+		WSADATA l_wsData{ 0 };
+		WSAStartup(MAKEWORD(2, 2), &l_wsData);
+
+		evthread_use_windows_threads();
+#else
 		evthread_use_pthreads();
+#endif
 
 		m_base.reset(event_base_new());
 

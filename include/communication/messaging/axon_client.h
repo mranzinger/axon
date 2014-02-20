@@ -1,7 +1,7 @@
 /*
  * File description: axon_client.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef AXON_CLIENT_H_
@@ -18,7 +18,7 @@ namespace axon { namespace communication {
 
 struct CMessageSocket;
 
-class CAxonClient
+class AXON_COMMUNICATE_API CAxonClient
 	: public AContractHost,
 	  public virtual IAxonClient
 {

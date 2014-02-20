@@ -1,7 +1,7 @@
 /*
  * File description: deserialize_buffer.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef DESERIALIZE_BUFFER_H_
@@ -14,7 +14,7 @@
 namespace axon { namespace serialization {
 
 template<>
-struct CDeserializer<util::CBuffer>
+struct AXON_SERIALIZE_API CDeserializer<util::CBuffer>
 {
 	static void Deserialize(const AData &a_data, util::CBuffer &a_buff)
 	{

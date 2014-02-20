@@ -1,7 +1,7 @@
 /*
  * File description: timeout_exception.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef TIMEOUT_EXCEPTION_H_
@@ -9,9 +9,11 @@
 
 #include <stdexcept>
 
+#include "dll_export.h"
+
 namespace axon { namespace communication {
 
-class CTimeoutException
+class AXON_COMMUNICATE_API CTimeoutException
 	: public std::runtime_error
 {
 private:

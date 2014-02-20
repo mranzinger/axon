@@ -1,7 +1,7 @@
 /*
  * File description: prim_data.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef PRIM_DATA_H_
@@ -63,7 +63,7 @@ struct CPrimCaster<A, std::string>
 };
 
 template<>
-struct CPrimCaster<std::string, std::string>
+struct AXON_SERIALIZE_API CPrimCaster<std::string, std::string>
 {
 	static const std::string &Get(const std::string &a_val)
 	{
@@ -72,7 +72,7 @@ struct CPrimCaster<std::string, std::string>
 };
 
 template<>
-struct CPrimCaster<const char *, std::string>
+struct AXON_SERIALIZE_API CPrimCaster<const char *, std::string>
 	: CPrimCaster<std::string, std::string>
 {
 };

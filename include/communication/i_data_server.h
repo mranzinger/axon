@@ -12,7 +12,7 @@
 
 namespace axon { namespace communication {
 
-class IDataServer
+class AXON_COMMUNICATE_API IDataServer
 {
 public:
 	typedef std::shared_ptr<IDataServer> Ptr;

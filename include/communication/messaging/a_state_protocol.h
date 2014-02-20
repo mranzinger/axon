@@ -1,7 +1,7 @@
 /*
  * File description: a_state_protocol.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef A_STATE_PROTOCOL_H_
@@ -14,7 +14,7 @@
 
 namespace axon { namespace communication {
 
-class AStateProtocol
+class AXON_COMMUNICATE_API AStateProtocol
 	: public AProtocol
 {
 private:

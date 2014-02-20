@@ -1,7 +1,7 @@
 /*
  * File description: poly_manager.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef POLY_MANAGER_H_
@@ -16,7 +16,7 @@
 
 namespace axon { namespace serialization {
 
-class CPolyBase
+class AXON_SERIALIZE_API CPolyBase
 {
 public:
 	typedef std::shared_ptr<CPolyBase> Ptr;
@@ -99,7 +99,7 @@ public:
 	}
 };
 
-class CPolyManager
+class AXON_SERIALIZE_API CPolyManager
 {
 private:
 	std::unordered_map<std::string, CPolyBase::Ptr> m_nameLookup;

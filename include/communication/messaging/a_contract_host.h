@@ -1,7 +1,7 @@
 /*
  * File description: i_contract_host.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Raninger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef A_CONTRACT_HOST_H_
@@ -16,7 +16,7 @@ namespace axon { namespace communication {
 
 
 
-class AContractHost
+class AXON_COMMUNICATE_API AContractHost
 	: public virtual IContractHost
 {
 private:
