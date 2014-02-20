@@ -33,9 +33,15 @@ public:
 	template<typename Ret, typename ...Args>
 	Ret Send(const CContract<Ret (Args...)> &a_contract, const Args &...a_args)
 	{
+		return Send(a_contract, 0, a_args...);
+	}
+
+	template<typename Ret, typename ...Args>
+	Ret Send(const CContract<Ret (Args...)> &a_contract, uint32_t a_timeout, const Args &...a_args)
+	{
 		CMessage::Ptr l_send = a_contract.Serialize(a_args...);
 
-		CMessage::Ptr l_ret = Send(*l_send);
+		CMessage::Ptr l_ret = Send(*l_send, a_timeout);
 
 		Ret l_retval;
 		a_contract.DeserializeRet(*l_ret, l_retval);
@@ -46,9 +52,15 @@ public:
 	template<typename ...Args>
 	void Send(const CContract<void (Args...)> &a_contract, const Args &...a_args)
 	{
+		Send(a_contract, 0, a_args...);
+	}
+
+	template<typename ...Args>
+	void Send(const CContract<void (Args...)> &a_contract, uint32_t a_timeout, const Args &...a_args)
+	{
 		CMessage::Ptr l_send = a_contract.Serialize(a_args...);
 
-		(void) Send(*l_send);
+		(void) Send(*l_send, a_timeout);
 	}
 };
 

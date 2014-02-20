@@ -51,7 +51,10 @@ public:
 		return *(m_buff.get() + idx);
 	}
 
+	void Reset();
 	void Reset(size_t a_buffSize);
+
+	void UpdateSize(size_t a_buffSize);
 
 	static CDataBuffer Copy(const char *a_data, size_t a_dataSize);
 

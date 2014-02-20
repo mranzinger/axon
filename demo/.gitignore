@@ -1,3 +1,7 @@
 /demo
 /demo_debug
 /demo_release
+/client_demo_debug
+/client_demo_release
+/server_demo_debug
+/server_demo_release

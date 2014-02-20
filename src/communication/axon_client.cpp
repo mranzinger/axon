@@ -37,9 +37,10 @@ CAxonClient::CAxonClient(const std::string& a_connectionString)
 }
 
 CAxonClient::CAxonClient(IDataConnection::Ptr a_connection)
-	: m_connection(move(a_connection))
 {
 	SetDefaultProtocol();
+
+	Connect(move(a_connection));
 }
 
 CAxonClient::CAxonClient(const std::string& a_connectionString, IProtocol::Ptr a_protocol)
@@ -53,7 +54,7 @@ CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_pro
 {
 	SetProtocol(move(a_protocol));
 
-	Connect(a_connection);
+	Connect(move(a_connection));
 }
 
 
@@ -128,16 +129,19 @@ void CAxonClient::SetProtocol(IProtocol::Ptr a_protocol)
 
 CMessage::Ptr CAxonClient::Send(const CMessage& a_message)
 {
-	// Default timeout is 1 minute
-	return Send(a_message, 60000);
+
+	return Send(a_message, 0);
 }
 
 CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
 {
 	if (!m_connection || !m_connection->IsOpen())
 		throw runtime_error("Cannot send data over a dead connection.");
+	// Default timeout is 1 minute
+	if (a_timeout == 0)
+		a_timeout = 60000;
 
-	SendNonBlocking(a_message);
+	p_Send(a_message);
 
 	auto l_start = chrono::steady_clock::now();
 
@@ -185,12 +189,15 @@ void CAxonClient::SendNonBlocking(const CMessage& a_message)
 	// a response doesn't get generated
 	const_cast<CMessage&>(a_message).SetOneWay(true);
 
+	p_Send(a_message);
+}
+
+void CAxonClient::p_Send(const CMessage& a_message)
+{
 	CDataBuffer l_buffer = m_protocol->SerializeMessage(a_message);
 
 	m_connection->Send(l_buffer.ToShared());
 }
-
-
 
 void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 {
@@ -210,7 +217,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 	bool l_handled = false;
 
 	{
-		lock_guard<mutex> l_lock(m_pendingLock);
+		//lock_guard<mutex> l_lock(m_pendingLock);
 
 		const std::string &l_reqId = a_message->RequestId();
 
@@ -227,6 +234,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 		if (iter != m_pendingList.end())
 		{
 			(*iter)->IncomingMessage = a_message;
+			l_handled = true;
 		}
 	}
 

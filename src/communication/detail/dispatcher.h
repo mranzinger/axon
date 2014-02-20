@@ -11,6 +11,7 @@
 #include <thread>
 #include <atomic>
 #include <iostream>
+#include <vector>
 
 #include "dll_export.h"
 
@@ -33,25 +34,50 @@ using namespace std;
 
 namespace axon { namespace communication { namespace tcp {
 
+typedef unique_ptr<event_base, void(*)(event_base*)> event_base_ptr;
+typedef unique_ptr<evdns_base, void(*)(evdns_base*)> dns_base_ptr;
+typedef unique_ptr<event, void(*)(event*)> event_ptr;
+
+inline void FreeEventBase(event_base *a_evt)
+{
+	event_base_free(a_evt);
+}
+inline void FreeDnsBase(evdns_base *a_dns)
+{
+	evdns_base_free(a_dns, 1);
+}
+inline void FreeEvt(event *a_evt)
+{
+	event_free(a_evt);
+}
+
 class CDispatcher
 {
 private:
-	typedef unique_ptr<event_base, void(*)(event_base*)> event_base_ptr;
-	typedef unique_ptr<evdns_base, void(*)(evdns_base*)> dns_base_ptr;
-	typedef unique_ptr<event, void(*)(event*)> event_ptr;
+
 
 	struct make_private {};
 
-	event_base_ptr m_base;
-	dns_base_ptr m_dns;
+	static const size_t NUM_THREADS = 8;
 
-	thread m_thread;
+	vector<event_base_ptr> m_bases;
+	vector<dns_base_ptr> m_dnss;
+	vector<event_ptr> m_kills;
+	vector<thread> m_threads;
+
+	mutex m_lock;
+	condition_variable m_startSync;
+
+	size_t m_maxThreads;
+	size_t m_lastEvt;
+
+	bool m_terminating;
 
 public:
 	typedef shared_ptr<CDispatcher> Ptr;
 
-	CDispatcher(make_private)
-		: m_base(nullptr, p_FreeBase), m_dns(nullptr, p_FreeDns)
+	CDispatcher(size_t a_numThreads, make_private)
+		: m_maxThreads(a_numThreads), m_lastEvt(0), m_terminating(false)
 	{
 #ifdef IS_WINDOWS
 		WSADATA l_wsData{ 0 };
@@ -62,71 +88,98 @@ public:
 		evthread_use_pthreads();
 #endif
 
-		m_base.reset(event_base_new());
+		unique_lock<mutex> l_condLock(m_lock);
 
-		m_dns.reset(evdns_base_new(Evt(), 1));
+		for (size_t i = 0; i < m_maxThreads; ++i)
+		{
+			m_bases.emplace_back(event_base_new(), FreeEventBase);
 
-		m_thread = thread(&CDispatcher::p_Run, this);
+			m_dnss.emplace_back(evdns_base_new(m_bases.back().get(), 1), FreeDnsBase);
+
+			// Create and add an event that will cause the loop to terminate
+			m_kills.emplace_back(event_new(Base(i), -1, EV_TIMEOUT | EV_PERSIST, p_TermLoop, Base(i)),
+					FreeEvt);
+
+			event_add(m_kills.back().get(), nullptr);
+
+			m_threads.emplace_back(&CDispatcher::p_Run, this, i);
+
+			m_startSync.wait(l_condLock);
+		}
 	}
 	~CDispatcher()
 	{
-		timeval tfast{0,10};
+		m_terminating = true;
+		for (size_t i = 0; i < NumThreads(); ++i)
+		{
+			// Trigger the kill event which will terminate the loop
+			event_active(m_kills[i].get(), EV_TIMEOUT, 1);
 
-		event_ptr l_timeout(event_new(m_base.get(), -1, 0,
-				p_TermLoop, this), p_FreeEvt);
+			m_threads[i].join();
 
-		// Tell the running event loop to exit once it finishes
-		//event_base_loopexit(m_base.get(), nullptr);
-
-		event_add(l_timeout.get(), &tfast);
-		//event_add(l_timeout.get(), nullptr);
-
-		// Make the event start
-		event_active(l_timeout.get(), EV_TIMEOUT, 1);
-
-		//m_thread.detach();
-		m_thread.join();
+			event_del(m_kills[i].get());
+		}
 	}
 
-	static Ptr Get()
+	static Ptr Get(size_t a_numThreads = NUM_THREADS)
 	{
-		static Ptr s_ptr = make_shared<CDispatcher>(make_private());
-
-		return s_ptr;
+		return make_shared<CDispatcher>(a_numThreads, make_private());
 	}
 
-	event_base *Evt() const { return m_base.get(); }
-	evdns_base *Dns() const { return m_dns.get(); }
+	static size_t OptimalNumThreads()
+	{
+		return NUM_THREADS;
+	}
+
+	size_t NumThreads() const { return m_maxThreads; }
+
+	event_base *GetNextBase()
+	{
+		unique_lock<mutex> l_lock(m_lock);
+
+		++m_lastEvt;
+		if (m_lastEvt >= m_maxThreads)
+		{
+			if (m_maxThreads == 1)
+				m_lastEvt = 0;
+			else
+				m_lastEvt = 1;
+		}
+
+		return Base(m_lastEvt);
+	}
+
+	event_base *Base() const { return m_bases[0].get(); }
+	event_base *Base(size_t a_idx) const { return m_bases[a_idx].get(); }
+	evdns_base *Dns() const { return m_dnss[0].get(); }
+	evdns_base *Dns(size_t a_idx) const { return m_dnss[a_idx].get(); }
 
 private:
-	void p_Run()
+	void p_Run(size_t a_idx)
 	{
-		cout << "Entering event dispatch loop." << endl;
+		{
+			lock_guard<mutex> l_lock(m_lock);
+			cout << "Entering event dispatch loop " << a_idx << "." << endl;
+		}
+		m_startSync.notify_all();
 
-		int l_err = event_base_dispatch(m_base.get());
+		int l_err = 1;
 
-		cout << "Exiting event dispatch loop. Status: " << l_err << endl;
+		do
+		{
+			l_err = event_base_dispatch(m_bases[a_idx].get());
+		} while (!m_terminating && l_err != -1);
+
+		cout << "Exiting Run Function. Loop: " << a_idx << ", Status: " << l_err << endl;
 	}
 	static void p_TermLoop(evutil_socket_t, short, void *p)
 	{
 		cout << "Term Loop Invoked." << endl;
 
-		//event_base_loopbreak(((CDispatcher*)p)->m_base.get());
-		event_base_loopexit(((CDispatcher*)p)->m_base.get(), nullptr);
+		event_base_loopexit((event_base*)p, nullptr);
 	}
 
-	static void p_FreeBase(event_base *a_evt)
-	{
-		event_base_free(a_evt);
-	}
-	static void p_FreeDns(evdns_base *a_dns)
-	{
-		evdns_base_free(a_dns, 1);
-	}
-	static void p_FreeEvt(event *a_evt)
-	{
-		event_free(a_evt);
-	}
+
 };
 
 } } }

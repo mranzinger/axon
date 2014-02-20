@@ -15,6 +15,7 @@
 
 #include "util/buffer.h"
 #include "messaging/data_buffer.h"
+#include "timeout_exception.h"
 
 #include "dll_export.h"
 
