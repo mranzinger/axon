@@ -1,7 +1,7 @@
 /*
  * File description: simple_math.h
- * Author information: Mike Ranzinger mranzinger@alchemyapi.com
- * Copyright information: Copyright Orchestr8 LLC
+ * Author information: Mike Ranzinger mikeranzinger@gmail.com
+ * Copyright information: Copyright Mike Ranzinger
  */
 
 #ifndef SIMPLE_MATH_H_

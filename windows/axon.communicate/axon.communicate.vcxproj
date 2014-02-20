@@ -1,0 +1,215 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{91C5DEF6-16D9-4E4D-8849-A2162BCE5A88}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>axoncommunicate</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AXONCOMMUNICATE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\include;..\..\include\communication;..\..\thirdparty\libevent\include;..\..\thirdparty\libevent\WIN32-Code;</AdditionalIncludeDirectories>
+      <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\thirdparty\libevent\lib\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libevent.lib;libevent_core.lib;libevent_extras.lib;Ws2_32.lib;Advapi32.lib;Shell32.lib;</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AXONCOMMUNICATE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\include;..\..\include\communication;..\..\thirdparty\libevent\include;..\..\thirdparty\libevent\WIN32-Code;</AdditionalIncludeDirectories>
+      <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\thirdparty\libevent\lib\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libevent.lib;libevent_core.lib;libevent_extras.lib;Ws2_32.lib;Advapi32.lib;Shell32.lib;</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AXONCOMMUNICATE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\include;..\..\include\communication;..\..\thirdparty\libevent\include;..\..\thirdparty\libevent\WIN32-Code;</AdditionalIncludeDirectories>
+      <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>..\..\thirdparty\libevent\lib\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libevent.lib;libevent_core.lib;libevent_extras.lib;Ws2_32.lib;Advapi32.lib;Shell32.lib;</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AXONCOMMUNICATE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\include;..\..\include\communication;..\..\thirdparty\libevent\include;..\..\thirdparty\libevent\WIN32-Code;</AdditionalIncludeDirectories>
+      <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>..\..\thirdparty\libevent\lib\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libevent.lib;libevent_core.lib;libevent_extras.lib;Ws2_32.lib;Advapi32.lib;Shell32.lib;</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\communication\dll_export.h" />
+    <ClInclude Include="..\..\include\communication\fault_exception.h" />
+    <ClInclude Include="..\..\include\communication\i_data_connection.h" />
+    <ClInclude Include="..\..\include\communication\i_data_server.h" />
+    <ClInclude Include="..\..\include\communication\messaging\axon_client.h" />
+    <ClInclude Include="..\..\include\communication\messaging\axon_protocol.h" />
+    <ClInclude Include="..\..\include\communication\messaging\axon_server.h" />
+    <ClInclude Include="..\..\include\communication\messaging\a_contract_host.h" />
+    <ClInclude Include="..\..\include\communication\messaging\a_protocol.h" />
+    <ClInclude Include="..\..\include\communication\messaging\a_state_protocol.h" />
+    <ClInclude Include="..\..\include\communication\messaging\contract.h" />
+    <ClInclude Include="..\..\include\communication\messaging\data_buffer.h" />
+    <ClInclude Include="..\..\include\communication\messaging\fault_serialization.h" />
+    <ClInclude Include="..\..\include\communication\messaging\function_invoker.h" />
+    <ClInclude Include="..\..\include\communication\messaging\i_axon_client.h" />
+    <ClInclude Include="..\..\include\communication\messaging\i_contract_host.h" />
+    <ClInclude Include="..\..\include\communication\messaging\i_protocol.h" />
+    <ClInclude Include="..\..\include\communication\messaging\i_protocol_factory.h" />
+    <ClInclude Include="..\..\include\communication\messaging\message.h" />
+    <ClInclude Include="..\..\include\communication\tcp\tcp_data_connection.h" />
+    <ClInclude Include="..\..\include\communication\tcp\tcp_data_server.h" />
+    <ClInclude Include="..\..\include\communication\timeout_exception.h" />
+    <ClInclude Include="..\..\src\communication\detail\dispatcher.h" />
+    <ClInclude Include="..\..\src\communication\detail\tcp_data_connection_impl.h" />
+    <ClInclude Include="..\..\src\communication\detail\tcp_data_server_impl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\communication\axon_client.cpp" />
+    <ClCompile Include="..\..\src\communication\axon_protocol.cpp" />
+    <ClCompile Include="..\..\src\communication\axon_server.cpp" />
+    <ClCompile Include="..\..\src\communication\a_contract_host.cpp" />
+    <ClCompile Include="..\..\src\communication\a_state_protocol.cpp" />
+    <ClCompile Include="..\..\src\communication\data_buffer.cpp" />
+    <ClCompile Include="..\..\src\communication\fault_serialization.cpp" />
+    <ClCompile Include="..\..\src\communication\i_data_connection.cpp" />
+    <ClCompile Include="..\..\src\communication\i_data_server.cpp" />
+    <ClCompile Include="..\..\src\communication\i_protocol.cpp" />
+    <ClCompile Include="..\..\src\communication\i_protocol_factory.cpp" />
+    <ClCompile Include="..\..\src\communication\message.cpp" />
+    <ClCompile Include="..\..\src\communication\tcp_data_connection.cpp" />
+    <ClCompile Include="..\..\src\communication\tcp_data_server.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\axon.serialize\axon.serialize.vcxproj">
+      <Project>{13f9988c-61c5-4af8-b5d9-7de9d07a20a7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\axon.util\axon.util.vcxproj">
+      <Project>{9308c920-cf26-40d0-b663-95583a4a4261}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

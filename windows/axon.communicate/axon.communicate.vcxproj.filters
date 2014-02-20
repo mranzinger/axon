@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{0f101b24-2f22-4147-881c-5ab5669ecf18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{36e6df86-3b21-434d-9234-f8c34caca46a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\messaging">
+      <UniqueIdentifier>{e8b56b0b-5c1d-41e9-98d9-68e65eb75790}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\tcp">
+      <UniqueIdentifier>{17dbc392-1069-49de-a8fd-c718cbfa6134}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\detail">
+      <UniqueIdentifier>{805cfe37-be3e-4877-801b-ff952d060a9e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\communication\fault_exception.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\i_data_connection.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\i_data_server.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\timeout_exception.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\a_contract_host.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\a_protocol.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\a_state_protocol.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\axon_client.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\axon_protocol.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\axon_server.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\contract.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\data_buffer.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\fault_serialization.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\function_invoker.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\i_axon_client.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\i_contract_host.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\i_protocol.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\i_protocol_factory.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\messaging\message.h">
+      <Filter>include\messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\tcp\tcp_data_connection.h">
+      <Filter>include\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\tcp\tcp_data_server.h">
+      <Filter>include\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\communication\detail\dispatcher.h">
+      <Filter>src\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\communication\detail\tcp_data_connection_impl.h">
+      <Filter>src\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\communication\detail\tcp_data_server_impl.h">
+      <Filter>src\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\communication\dll_export.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\communication\a_contract_host.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\a_state_protocol.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\axon_client.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\axon_protocol.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\axon_server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\data_buffer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\fault_serialization.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\i_data_connection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\i_data_server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\i_protocol.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\i_protocol_factory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\message.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\tcp_data_connection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\communication\tcp_data_server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

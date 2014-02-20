@@ -7,7 +7,16 @@
 #include <iostream>
 #include <assert.h>
 #include <random>
+
+#ifdef _WIN32
+#include <Windows.h>
+#define usleep Sleep
+
+#undef min
+#undef max
+#else
 #include <unistd.h>
+#endif
 
 #include "serialization/master.h"
 

@@ -217,7 +217,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 	bool l_handled = false;
 
 	{
-		//lock_guard<mutex> l_lock(m_pendingLock);
+		lock_guard<mutex> l_lock(m_pendingLock);
 
 		const std::string &l_reqId = a_message->RequestId();
 

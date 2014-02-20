@@ -29,6 +29,9 @@
 #include <Ws2tcpip.h>
 
 #define inet_ntop InetNtop
+
+#undef min
+#undef max
 #else
 #include <arpa/inet.h>
 #endif

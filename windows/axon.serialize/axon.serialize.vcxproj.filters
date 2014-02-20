@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{00e62e82-598e-4eab-bdcb-7dda3a9c47ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{d1a85623-1f62-4bef-83d4-aa0436a7a443}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\base">
+      <UniqueIdentifier>{dec0757c-ef89-490b-b28a-050f68001cb0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\format">
+      <UniqueIdentifier>{f1c8ad6a-eeb3-49da-a373-ac51a1ebbcc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\base\detail">
+      <UniqueIdentifier>{b2f2859c-7ba1-48b0-9193-aa840cc1e1d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pugixml">
+      <UniqueIdentifier>{1a6b1d86-ab28-42d6-a46f-5660065d32ae}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\serialization\master.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\a_data.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\array_data.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\buffer_data.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\data_type.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\deserialize.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\deserialize_buffer.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\deserialize_coll.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\deserialize_ptr.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\i_data_context.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\null_data.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\poly_manager.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\prim_array_data.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\prim_data.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\serialization_context.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\serialize.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\serialize_buffer.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\serialize_coll.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\serialize_ptr.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\struct_binder.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\struct_data.h">
+      <Filter>include\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\base\detail\serialization_context_impl.h">
+      <Filter>include\base\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\format\a_serializer.h">
+      <Filter>include\format</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\format\axon_serializer.h">
+      <Filter>include\format</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\format\json_serializer.h">
+      <Filter>include\format</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\format\xml_serializer.h">
+      <Filter>include\format</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\serialization\dll_export.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\serialization\a_serializer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\serialization\axon_serializer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\serialization\json_serializer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\serialization\null_data.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\serialization\poly_manager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\serialization\xml_serializer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\pugixml\src\pugixml.cpp">
+      <Filter>pugixml</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
