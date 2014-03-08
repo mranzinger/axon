@@ -73,6 +73,7 @@ $(OBJ_SER)/%.od: $(SRC_SER)/%.cpp
 			-Iinclude \
 			-Iinclude/serialization \
 			-Ithirdparty/include \
+			-Ithirdparty/pugixml/src \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxutild \
@@ -83,6 +84,7 @@ $(OBJ_SER)/%.o: $(SRC_SER)/%.cpp
 			-Iinclude \
 			-Iinclude/serialization \
 			-Ithirdparty/include \
+			-Ithirdparty/pugixml/src \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxutil \
@@ -93,6 +95,7 @@ $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
 			-Iinclude \
 			-Iinclude/communication \
 			-Ithirdparty/include \
+			-Ithirdparty/pugixml/src \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxserd -laxutild \
@@ -104,6 +107,7 @@ $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
 			-Iinclude \
 			-Iinclude/communication \
 			-Ithirdparty/include \
+			-Ithirdparty/pugixml/src \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxser -laxutil \
