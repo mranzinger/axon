@@ -237,9 +237,9 @@ struct CRegisterDerived
 };
 
 #define AXON_SERIALIZE_DERIVED_TYPE(baseType, derType, name) \
-		static const ::axon::serialization::CRegisterDerived<baseType, derType> __axon_derived_register_ ## baseType ## _ ## derType (name)
+	static const ::axon::serialization::CRegisterDerived<baseType, derType> __axon_derived_register_ ## baseType ## _ ## name (#name)
 
-#define AXON_SERIALIZE_DERIVED_TYPE_D(baseType, derType) AXON_SERIALIZE_DERIVED_TYPE(baseType, derType, "")
+#define AXON_SERIALIZE_DERIVED_TYPE_D(baseType, derType) AXON_SERIALIZE_DERIVED_TYPE(baseType, derType, #derType)
 
 
 } }

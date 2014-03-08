@@ -31,6 +31,15 @@ public:
 
 		return SerializeData(*l_data);
 	}
+
+	template<typename T>
+	void SerializeToFile(const std::string &a_fileName, const T &a_val) const
+	{
+		auto l_data = axon::serialization::Serialize(a_val);
+
+		SerializeDataToFile(a_fileName, *l_data);
+	}
+
 	template<typename T>
 	T Deserialize(const std::string &a_buf) const
 	{
@@ -42,6 +51,14 @@ public:
 	void Deserialize(const std::string &a_buf, T &a_val) const
 	{
 		auto l_data = DeserializeData(a_buf.data(), a_buf.data() + a_buf.size());
+
+		axon::serialization::Deserialize(*l_data, a_val);
+	}
+
+	template<typename T>
+	void DeserializeFromFile(const std::string &a_fileName, T &a_val) const
+	{
+		auto l_data = DeserializeDataFromFile(a_fileName);
 
 		axon::serialization::Deserialize(*l_data, a_val);
 	}
@@ -63,14 +80,15 @@ public:
 
 	virtual AData::Ptr DeserializeData(const char *a_buf, const char *a_endBuf) const = 0;
 
-protected:
 	/*
 	 * Abstract function that serializes the data into the format controlled by
 	 * derived classes.
 	 */
 	virtual std::string SerializeData(const AData &a_data) const = 0;
 
+	virtual void SerializeDataToFile(const std::string &a_fileName, const AData &a_data) const;
 
+	virtual AData::Ptr DeserializeDataFromFile(const std::string &a_fileName) const;
 };
 
 } }

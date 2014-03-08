@@ -54,6 +54,10 @@ public:
 	CStructWriter(CStructData *a_data)
 		: m_data(a_data) { }
 
+	const CSerializationContext &GetContext() const {
+		return m_data->Context();
+	}
+
 	template<typename T, typename ...Flags>
 	const CStructWriter &operator()(std::string a_name, const T &a_val, Flags ...a_flags) const
 	{
@@ -63,6 +67,11 @@ public:
 				    Serialize(a_val, m_data->Context()));
 
 		return *this;
+	}
+
+	void Append(std::string a_name, AData::Ptr a_data) const
+	{
+		m_data->Add(std::move(a_name), std::move(a_data));
 	}
 };
 
@@ -75,10 +84,19 @@ public:
 	CStructReader(const CStructData *a_data)
 		: m_data(a_data) { }
 
+	const CSerializationContext &GetContext() const {
+		return m_data->Context();
+	}
+
 	template<typename T>
 	T GetPrimitive(const std::string &a_name) const
 	{
 		return Deserialize<T>(*m_data->Get(a_name));
+	}
+
+	const AData *GetData(const std::string &a_name) const
+	{
+		return m_data->Find(a_name);
 	}
 
 	template<typename T, typename ...Flags>
@@ -86,7 +104,10 @@ public:
 	{
 		const auto &l_flags = SetSerFlags(m_data->Context(), a_flags...);
 
-		Deserialize(m_data->Get(a_name), a_val);
+		auto &data = m_data->Get(a_name);
+
+		if (data)
+			Deserialize(data, a_val);
 
 		return *this;
 	}
