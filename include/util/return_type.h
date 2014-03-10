@@ -9,6 +9,7 @@
 #define RETURN_TYPE_H_
 
 #include <type_traits>
+#include <functional>
 
 namespace axon { namespace util {
 
@@ -51,6 +52,20 @@ struct function_traits<ReturnType (*)(Args...)>
         // the i-th argument is equivalent to the i-th tuple element of a tuple
         // composed of those arguments.
     };
+};
+
+template<typename Ret, typename ...Args>
+struct function_traits<std::function<Ret (Args...)>>
+{
+	enum { arity = sizeof...(Args) };
+
+	typedef Ret result_type;
+
+	template<size_t i>
+	struct arg
+	{
+		typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
+	};
 };
 
 /*namespace {
