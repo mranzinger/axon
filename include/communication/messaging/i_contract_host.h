@@ -14,7 +14,7 @@ namespace axon { namespace communication {
 class IContractHandler;
 typedef std::shared_ptr<IContractHandler> IContractHandlerPtr;
 
-template<typename ContractType, typename HandlerType>
+template<typename ContractType>
 class CContractHandler;
 
 class AXON_COMMUNICATE_API IContractHost
@@ -26,11 +26,11 @@ public:
 
 	virtual void Host(IContractHandlerPtr a_handler) = 0;
 
-	template<typename ContractType, typename HandlerType>
-	IContractHandlerPtr HostContract(ContractType a_contract, HandlerType a_handler)
+	template<typename ContractType>
+	IContractHandlerPtr HostContract(ContractType a_contract, typename ContractType::function_type a_handler)
 	{
 		auto l_handler = std::make_shared<
-				CContractHandler<ContractType, HandlerType>
+				CContractHandler<ContractType>
 			 >(std::move(a_contract), std::move(a_handler));
 
 		Host(l_handler);
@@ -56,16 +56,16 @@ public:
 	virtual CMessage::Ptr Invoke(const CMessage &a_msg) const = 0;
 };
 
-template<typename ContractType, typename HandlerType>
+template<typename ContractType>
 class CContractHandler
 	: public virtual IContractHandler
 {
 private:
 	ContractType m_contract;
-	HandlerType m_handler;
+	typename ContractType::function_type m_handler;
 
 public:
-	CContractHandler(ContractType a_contract, HandlerType a_handler)
+	CContractHandler(ContractType a_contract, typename ContractType::function_type a_handler)
 		: m_contract(std::move(a_contract)), m_handler(std::move(a_handler))
 	{
 	}
@@ -85,8 +85,8 @@ private:
 	IContractHandlerPtr m_handler;
 
 public:
-	template<typename ContractType, typename HandlerType>
-	CScopedContractHandler(IContractHost &a_host, const ContractType &a_contract, const HandlerType &a_handler)
+	template<typename ContractType>
+	CScopedContractHandler(IContractHost &a_host, const ContractType &a_contract, const typename ContractType::function_type &a_handler)
 		: m_host(a_host)
 	{
 		m_handler = m_host.HostContract(a_contract, a_handler);

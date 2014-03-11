@@ -13,11 +13,8 @@
 
 namespace axon { namespace util {
 
-template <typename T>
-struct function_traits
-    : public function_traits<decltype(&T::operator())>
-{};
-// For generic types, directly use the result of the signature of its 'operator()'
+template<typename T>
+struct function_traits;
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct function_traits<ReturnType(ClassType::*)(Args...) const>
@@ -67,6 +64,12 @@ struct function_traits<std::function<Ret (Args...)>>
 		typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
 	};
 };
+
+// For generic types, directly use the result of the signature of its 'operator()'
+template <typename T>
+struct function_traits
+    : public function_traits<decltype(&T::operator())>
+{};
 
 /*namespace {
 

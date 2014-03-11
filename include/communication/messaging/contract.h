@@ -8,6 +8,7 @@
 #define CONTRACT_H_
 
 #include <tuple>
+#include <functional>
 
 #include "message.h"
 #include "function_invoker.h"
@@ -37,6 +38,7 @@ private:
 
 public:
 	typedef std::tuple<Args...> tuple_type;
+	typedef std::function<Ret (Args...)> function_type;
 
 	CContract(std::string a_action)
 		: m_action(std::move(a_action))
