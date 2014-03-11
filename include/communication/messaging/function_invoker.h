@@ -31,17 +31,17 @@ struct CGenSequence<0, Sequence...>
 };
 
 template<typename Fn, typename Tuple, int ...Seq>
-typename util::return_type<Fn>::type invoke_fn(Fn &&a_fn, Tuple &&a_tuple, const CSequence<Seq...> &)
+typename util::return_type<Fn>::type invoke_fn(Fn &&a_fn, Tuple a_tuple, const CSequence<Seq...> &)
 {
-	return a_fn(std::get<Seq>(a_tuple)...);
+	return a_fn(std::move(std::get<Seq>(a_tuple))...);
 }
 
 }
 
 template<typename Fn, typename ...Args>
-typename util::return_type<Fn>::type InvokeFunction(Fn &&a_fn, const std::tuple<Args...> &a_tuple)
+typename util::return_type<Fn>::type InvokeFunction(Fn &&a_fn, std::tuple<Args...> a_tuple)
 {
-	return internal::invoke_fn(std::forward<Fn>(a_fn), a_tuple,
+	return internal::invoke_fn(std::forward<Fn>(a_fn), std::move(a_tuple),
 			typename internal::CGenSequence<sizeof...(Args)>::type());
 }
 

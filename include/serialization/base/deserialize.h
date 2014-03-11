@@ -118,7 +118,7 @@ T Deserialize(const AData &a_data)
 {
 	T l_ret;
 	Deserialize(a_data, l_ret);
-	return l_ret;
+	return std::move(l_ret);
 }
 
 template<typename T>

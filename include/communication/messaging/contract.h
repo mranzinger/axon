@@ -156,7 +156,7 @@ struct fn_invoker<void (Args...)>
 	{
 		auto l_tuple = a_contract->DeserializeArgs(a_msg);
 
-		InvokeFunction(std::forward<Fn>(a_fn), l_tuple);
+		InvokeFunction(std::forward<Fn>(a_fn), std::move(l_tuple));
 
 		return a_contract->SerializeVoidRet(a_msg);
 	}
@@ -173,7 +173,7 @@ struct fn_invoker<Ret (Args...)>
 
 		auto l_tuple = a_contract->DeserializeArgs(a_msg);
 
-		auto l_ret = InvokeFunction(std::forward<Fn>(a_fn), l_tuple);
+		auto l_ret = InvokeFunction(std::forward<Fn>(a_fn), std::move(l_tuple));
 
 		return a_contract->SerializeRet(a_msg, l_ret);
 	}
