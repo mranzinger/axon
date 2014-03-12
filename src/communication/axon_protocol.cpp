@@ -80,17 +80,6 @@ void CAxonProtocol::ProcessInternal(CDataBuffer a_buffer)
 	if (a_buffer.Size() == 0)
 		return;
 
-	bool l_full = false;
-
-	if (m_currState != APState::Anchor)
-	{
-		cout << "Entering process function in state " << (int)m_currState << endl;
-	}
-	else
-		l_full = true;
-
-	bool l_proc = false;
-
 	char *l_curr = a_buffer.Data();
 	char *l_end = a_buffer.end();
 
@@ -112,14 +101,8 @@ void CAxonProtocol::ProcessInternal(CDataBuffer a_buffer)
 			break;
 		case APState::Message:
 			p_ProcMessage(l_curr, l_end);
-			l_proc = true;
 			break;
 		}
-	}
-
-	if (l_full && !l_proc)
-	{
-		cout << "A message was fragmented." << endl;
 	}
 }
 
