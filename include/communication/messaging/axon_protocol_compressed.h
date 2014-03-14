@@ -15,9 +15,20 @@ private:
     serialization::ICompressor::Ptr m_compressor;
 
 public:
+    typedef std::unique_ptr<CAxonProtocolCompressed> Ptr;
+
     CAxonProtocolCompressed();
     CAxonProtocolCompressed(serialization::ASerializer::Ptr a_serializer);
             
+    static Ptr Create()
+    {
+        return Ptr(new CAxonProtocolCompressed);
+    }
+    static Ptr Create(serialization::ASerializer::Ptr a_serializer)
+    {
+        return Ptr(new CAxonProtocolCompressed(std::move(a_serializer)));
+    }
+
     void SetCompressor(serialization::ICompressor::Ptr a_compressor);
 
     virtual CDataBuffer SerializeMessage(const CMessage &a_msg) const override;
