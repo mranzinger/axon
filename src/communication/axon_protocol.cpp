@@ -163,12 +163,12 @@ void CAxonProtocol::p_ProcMessage(char*& a_curr, char* a_end)
 	}
 }
 
-void CAxonProtocol::p_Finalize()
+void CAxonProtocol::FinishProcessing(CDataBuffer a_buffer)
 {
-	try
+ 	try
 	{
 		AData::Ptr l_data = m_serializer->DeserializeData(
-				m_dataBuff.begin(), m_dataBuff.end());
+				a_buffer.begin(), a_buffer.end());
 
 		auto l_msg = make_shared<CMessage>(move(l_data));
 
@@ -177,7 +177,12 @@ void CAxonProtocol::p_Finalize()
 	catch (...)
 	{
 		// TODO: Log this?
-	}
+	}   
+}
+
+void CAxonProtocol::p_Finalize()
+{
+    FinishProcessing(move(m_dataBuff));
 }
 
 bool CAxonProtocol::p_ReadIntoBuffer(char* a_target, size_t a_targetSize,

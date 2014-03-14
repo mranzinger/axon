@@ -21,23 +21,25 @@ class CBuffer
 public:
 	typedef std::shared_ptr<char> TPtr;
 	typedef CArrayDeleter<char> TDeleter;
-
-private:
-	size_t m_buffSize;
-	TPtr m_buff;
-
-public:
-	typedef char *iterator;
-	typedef const char *const_iterator;
-
-	enum Ownership
+	
+    enum Ownership
 	{
 		Unowned,
 		TakeOwnership
 	};
 
+private:
+	size_t m_buffSize;
+	TPtr m_buff;
+    Ownership *m_ownership;
+
+public:
+	typedef char *iterator;
+	typedef const char *const_iterator;
+
+
 	CBuffer()
-		: m_buffSize(0)
+		: m_buffSize(0), m_ownership(nullptr)
 	{
 
 	}
@@ -50,9 +52,29 @@ public:
 		Reset(a_bufSize, a_buff, a_mode);
 	}
 	CBuffer(size_t a_bufSize, TPtr a_buf)
-		: m_buffSize(a_bufSize), m_buff(std::move(a_buf))
 	{
+        Reset(a_bufSize, std::move(a_buf));
 	}
+    CBuffer(const CBuffer &a_other)
+    {
+        Reset(a_other.m_buffSize, a_other.m_buff);
+    }
+    
+    CBuffer &operator=(CBuffer a_other)
+    {
+        swap(*this, a_other);
+        return *this;
+    }
+
+    friend void swap(CBuffer &a, CBuffer &b)
+    {
+        using std::swap;
+
+        swap(a.m_buff, b.m_buff);
+        swap(a.m_buffSize, b.m_buffSize);
+        swap(a.m_ownership, b.m_ownership);
+    }
+
 
 	void Reset()
 	{
@@ -60,7 +82,7 @@ public:
 	}
 	void Reset(size_t a_bufSize)
 	{
-		auto l_buf = a_bufSize ? new char[a_bufSize] : nullptr;
+    	auto l_buf = a_bufSize ? new char[a_bufSize] : nullptr;
 
 		try
 		{
@@ -75,30 +97,61 @@ public:
 	void Reset(size_t a_bufSize, char *a_buff, Ownership a_mode)
 	{
 		m_buffSize = a_bufSize;
-
+        
 		if (0 == a_bufSize || !a_buff)
 		{
 			m_buffSize = 0;
 			m_buff.reset();
 		}
-		else if (Unowned == a_mode)
-		{
-			// If this object doesn't assume ownership of the buffer,
-			// then supply a deleter that does nothing
-			m_buff.reset(a_buff, [] (const char*) {});
-		}
-		else if (TakeOwnership == a_mode)
-		{
-			m_buff.reset(a_buff, TDeleter());
-		}
 		else
-			throw std::runtime_error("Unknown ownership mode.");
+		{
+            auto l_ownership = m_ownership = new Ownership(a_mode);
+
+            m_buff.reset(a_buff, 
+                    [l_ownership] (const char *a_ptr)
+                    {
+                        if (*l_ownership != Unowned)
+                            delete[] a_ptr; 
+                        delete l_ownership;
+                    });
+		}
 	}
 	void Reset(size_t a_bufSize, TPtr a_buf)
 	{
 		m_buffSize = a_bufSize;
-		m_buff = std::move(a_buf);
+		
+        auto l_ownership = m_ownership = new Ownership(Unowned);
+        
+        // The capture of the lambda is what actually ties
+        // the lifetime of a_buf and m_buff. All that really needs
+        // to be done is to clean up the ownership pointer.
+        m_buff.reset(a_buf.get(), 
+            [l_ownership, a_buf] (const char *a_ptr)
+            {
+                delete l_ownership;
+            });
 	}
+
+    std::unique_ptr<char[]> Release(size_t &a_bufSize)
+    {
+        if (m_buff)
+        {
+            if (!m_buff.unique())
+                throw std::runtime_error("Unable to release this buffer because it is shared across multiple objects.");
+
+            *m_ownership = Unowned;
+            a_bufSize = m_buffSize;
+            m_buffSize = 0;
+            auto l_ret = std::unique_ptr<char[]>(m_buff.get());
+            m_buff.reset();
+            return std::move(l_ret);
+        }
+        else
+        {
+            a_bufSize = 0;
+            return std::unique_ptr<char[]>();
+        }
+    }
 
 	const char &operator[](size_t a_off) const
 	{

@@ -41,7 +41,8 @@ public:
 
 	CMessage(MessageType a_type = MessageType::Normal);
 	CMessage(serialization::AData::Ptr a_msgVal);
-	CMessage(const CMessage &a_other, MessageType a_type);
+	CMessage(const CMessage &a_other);
+    CMessage(const CMessage &a_other, MessageType a_type);
 	CMessage(const CMessage &a_other, const std::exception &a_ex);
 	CMessage(const CMessage &a_other, const CFaultException &a_ex);
 

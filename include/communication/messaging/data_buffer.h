@@ -9,6 +9,7 @@
 #define DATA_BUFFER_H_
 
 #include "util/buffer.h"
+#include "serialization/master.h"
 
 #include "../dll_export.h"
 
@@ -28,6 +29,7 @@ public:
 	typedef const char *const_iterator;
 
 	CDataBuffer();
+    CDataBuffer(TPtr a_data, size_t a_dataSize);
 	CDataBuffer(size_t a_dataSize);
 	CDataBuffer(char *data, size_t dataSize);
 
@@ -81,8 +83,41 @@ private:
 	CDataBuffer &operator=(const CDataBuffer &) = delete;
 };
 
-} }
+} 
+
+namespace serialization {
+
+template<>
+struct AXON_SERIALIZE_API CDeserializer<communication::CDataBuffer>
+{
+    static void Deserialize(const AData &a_data, communication::CDataBuffer &a_buff)
+    {
+        if (DataType::Buffer == a_data.Type())
+        {
+            size_t l_bufSize;
+            auto l_upBuff = const_cast<CBufferData*>(static_cast<const CBufferData *>(&a_data))->GetBuffer().Release(l_bufSize);
+
+            a_buff = communication::CDataBuffer(std::move(l_upBuff), l_bufSize);
+        }
+        else
+        {
+            std::string l_enc = a_data.ToString();
+
+            a_buff.Reset(l_enc.size());
+
+            std::copy(l_enc.begin(), l_enc.end(), a_buff.begin());
+        }
+    }
+};
+
+
+}
+
+
+}
+
 
 
 
 #endif /* DATA_BUFFER_H_ */
+
