@@ -10,7 +10,7 @@ CAxonProtocolCompressed::CAxonProtocolCompressed()
 {
     SetCompressor(ICompressor::DEFAULT_INSTANCE);
 
-    SetHandler(bind(&CAxonProtocolCompressed::OnOuterProcessed, this, placeholders::_1));
+    m_outer.SetHandler(bind(&CAxonProtocolCompressed::OnOuterProcessed, this, placeholders::_1));
 }
 
 CAxonProtocolCompressed::CAxonProtocolCompressed(ASerializer::Ptr a_serializer)
@@ -22,6 +22,11 @@ CAxonProtocolCompressed::CAxonProtocolCompressed(ASerializer::Ptr a_serializer)
 void CAxonProtocolCompressed::SetCompressor(ICompressor::Ptr a_compressor)
 {
     m_compressor = move(a_compressor);
+}
+
+void CAxonProtocolCompressed::SetHandler(HandlerFn a_fn)
+{
+	m_inner.SetHandler(move(a_fn));
 }
 
 CDataBuffer CAxonProtocolCompressed::SerializeMessage(const CMessage &a_msg) const
@@ -44,6 +49,8 @@ void CAxonProtocolCompressed::Process(CDataBuffer a_buffer)
 {
     m_outer.Process(move(a_buffer));
 }
+
+
 
 void CAxonProtocolCompressed::OnOuterProcessed(const CMessage::Ptr &a_outerMsg)
 {

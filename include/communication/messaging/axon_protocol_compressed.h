@@ -7,7 +7,7 @@
 namespace axon { namespace communication {
 
 class AXON_COMMUNICATE_API CAxonProtocolCompressed
-    : public AProtocol
+    : public IProtocol
 {
 private:
     CAxonProtocol m_inner;
@@ -28,6 +28,8 @@ public:
     {
         return Ptr(new CAxonProtocolCompressed(std::move(a_serializer)));
     }
+
+    virtual void SetHandler(HandlerFn a_fn) override;
 
     void SetCompressor(serialization::ICompressor::Ptr a_compressor);
 
