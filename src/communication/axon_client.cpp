@@ -154,8 +154,6 @@ CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
 	// Add the socket to the map of messages waiting to be handled
 	m_pendingList.push_back(&l_socket);
 
-	size_t l_sockIdx = m_pendingList.size() - 1;
-
 	while (!l_socket.IncomingMessage)
 	{
 		cv_status l_status = cv_status::no_timeout;
@@ -171,7 +169,13 @@ CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
 				|| l_status == cv_status::timeout
 				|| l_durLeft < chrono::milliseconds(0))
 		{
-			m_pendingList.erase(m_pendingList.begin() + l_sockIdx);
+			auto iter = find(m_pendingList.begin(), m_pendingList.end(), &l_socket);
+            
+            if (iter != m_pendingList.end())
+                m_pendingList.erase(iter);
+            else
+                throw runtime_error("The completed socket wasn't in the list of pending communications."
+                                    " Not even sure this can happen... but if it did... bummer.");
 
 			if (!l_socket.IncomingMessage)
 			{
