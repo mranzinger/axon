@@ -432,6 +432,9 @@ inline void CTcpDataServer::Impl::p_DoRebalance()
 			}
 		}
 
+		if (l_busyClients.empty())
+			continue;
+
 #ifdef AXON_VERBOSE
 		for (double c : l_busyTimes)
 		{
