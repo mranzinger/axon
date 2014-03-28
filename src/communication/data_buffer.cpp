@@ -19,6 +19,12 @@ CDataBuffer::CDataBuffer()
 
 }
 
+CDataBuffer::CDataBuffer(TPtr a_data, size_t a_dataSize)
+    : m_buff(move(a_data)), m_buffSize(a_dataSize)
+{
+
+}
+
 CDataBuffer::CDataBuffer(size_t a_dataSize)
 {
 	Reset(a_dataSize);

@@ -50,13 +50,13 @@ public:
 	}
 
 	template<typename ...Args>
-	void Send(const CContract<void (Args...)> &a_contract, const Args &...a_args)
+	void VSend(const CContract<void (Args...)> &a_contract, const Args &...a_args)
 	{
-		Send(a_contract, 0, a_args...);
+		VSend(a_contract, 0, a_args...);
 	}
 
 	template<typename ...Args>
-	void Send(const CContract<void (Args...)> &a_contract, uint32_t a_timeout, const Args &...a_args)
+	void VSend(const CContract<void (Args...)> &a_contract, uint32_t a_timeout, const Args &...a_args)
 	{
 		CMessage::Ptr l_send = a_contract.Serialize(a_args...);
 

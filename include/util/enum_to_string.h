@@ -108,7 +108,7 @@ private:
 	template<> inline std::string ToString<EnumType>(const EnumType &val) { return varName.to_string(val); } } } \
 	const axon::util::EnumIOInternal::enum_io_helper<EnumType> varName = axon::util::EnumIOInternal::enum_io_helper<EnumType>()
 
-#define ENUM_IO_MAP(EnumType) ENUM_IO_MAP_SL(EnumType, MAKE_UNIQUE(__enumIO_))
+#define ENUM_IO_MAP(EnumType) ENUM_IO_MAP_SL(EnumType, MAKE_UNIQUE(__enumIO_ ## EnumType))
 
 #define ENTRY(EnumValue) (EnumValue, #EnumValue)
 #define ENMAP(EnumValue, EnumString) (EnumValue, EnumString)

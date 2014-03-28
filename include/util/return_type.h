@@ -9,14 +9,12 @@
 #define RETURN_TYPE_H_
 
 #include <type_traits>
+#include <functional>
 
 namespace axon { namespace util {
 
-template <typename T>
-struct function_traits
-    : public function_traits<decltype(&T::operator())>
-{};
-// For generic types, directly use the result of the signature of its 'operator()'
+template<typename T>
+struct function_traits;
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct function_traits<ReturnType(ClassType::*)(Args...) const>
@@ -52,6 +50,26 @@ struct function_traits<ReturnType (*)(Args...)>
         // composed of those arguments.
     };
 };
+
+template<typename Ret, typename ...Args>
+struct function_traits<std::function<Ret (Args...)>>
+{
+	enum { arity = sizeof...(Args) };
+
+	typedef Ret result_type;
+
+	template<size_t i>
+	struct arg
+	{
+		typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
+	};
+};
+
+// For generic types, directly use the result of the signature of its 'operator()'
+template <typename T>
+struct function_traits
+    : public function_traits<decltype(&T::operator())>
+{};
 
 /*namespace {
 

@@ -367,8 +367,10 @@ inline void CTcpDataServer::Impl::UpdateClientProcTime(CServerConnImpl* a_client
 
 inline void CTcpDataServer::Impl::p_DoRebalance()
 {
+#ifdef AXON_VERBOSE
 	cout << endl;
 	cout << "Executing Load Re-balance Routine" << endl;
+#endif
 
 	// Create a copy of the timings. This is so that the math isn't unstable
 	vector<double> l_times;
@@ -378,14 +380,16 @@ inline void CTcpDataServer::Impl::p_DoRebalance()
 	double l_mean = Mean(l_times.begin(), l_times.end());
 	double l_stdDev = StdDev(l_times.begin(), l_times.end());
 
+	size_t i = 0;
+#ifdef AXON_VERBOSE
 	cout << "Average Handler Time: " << duration_cast<milliseconds>(microseconds(size_t(l_mean))).count() << "ms" << endl
 		 << "Standard Deviation: " << duration_cast<milliseconds>(microseconds(size_t(l_stdDev))).count() << "ms" << endl << endl
 		 << "Individual Threads:" << endl;
-	size_t i = 0;
 	for (double l_time : l_times)
 	{
 		cout << "(" << i++ << ") " << duration_cast<milliseconds>(microseconds(size_t(l_time))).count() << "ms" << endl;
 	}
+#endif
 
 	vector<size_t> l_busyThreads;
 	for (i = 0; i < l_times.size(); ++i)
@@ -395,15 +399,20 @@ inline void CTcpDataServer::Impl::p_DoRebalance()
 		if (l_micro > l_mean + l_stdDev)
 			l_busyThreads.push_back(i);
 	}
+
+#ifdef AXON_VERBOSE
 	cout << endl;
 
 	cout << "Busy Threads: ";
 	for_each(l_busyThreads.begin(), l_busyThreads.end(), [](size_t i) { cout << i << " "; });
 	cout << endl << endl;
+#endif
 
 	for (size_t l_busy : l_busyThreads)
 	{
+#ifdef AXON_VERBOSE
 		cout << "Attempting to balance thread " << l_busy << endl;
+#endif
 
 		vector<CServerConnImpl*> l_busyClients;
 		vector<double> l_busyTimes;
@@ -419,10 +428,15 @@ inline void CTcpDataServer::Impl::p_DoRebalance()
 			}
 		}
 
+		if (l_busyClients.empty())
+			continue;
+
+#ifdef AXON_VERBOSE
 		for (double c : l_busyTimes)
 		{
 			cout << " - " << c << endl;
 		}
+#endif
 
 		size_t l_from = rand() % l_busyClients.size();
 
@@ -430,13 +444,17 @@ inline void CTcpDataServer::Impl::p_DoRebalance()
 
 		size_t l_to = l_min - l_times.begin();
 
+#ifdef AXON_VERBOSE
 		cout << "Moving client " << l_from << " to thread " << l_to << endl;
+#endif
 		bufferevent_base_set(m_dispatcher->Base(l_to + 1), l_busyClients[l_from]->GetBufferEvent());
 
 		l_times[l_busy] -= l_busyTimes[l_from];
 		*l_min += l_busyTimes[l_from];
 
+#ifdef AXON_VERBOSE
 		cout << endl;
+#endif
 	}
 
 	for (base_timing &l_base : m_timers)
@@ -445,7 +463,9 @@ inline void CTcpDataServer::Impl::p_DoRebalance()
 	for (auto &l_pair : m_conns)
 		l_pair.second->GetImpl()->ResetProcTime();
 
+#ifdef AXON_VERBOSE
 	cout << endl;
+#endif
 }
 
 inline void CTcpDataServer::Impl::p_AcceptErrorCallback(evconnlistener* a_listener)

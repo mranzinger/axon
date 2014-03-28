@@ -8,6 +8,7 @@
 #define CONTRACT_H_
 
 #include <tuple>
+#include <functional>
 
 #include "message.h"
 #include "function_invoker.h"
@@ -37,6 +38,7 @@ private:
 
 public:
 	typedef std::tuple<Args...> tuple_type;
+	typedef std::function<Ret (Args...)> function_type;
 
 	CContract(std::string a_action)
 		: m_action(std::move(a_action))
@@ -154,7 +156,7 @@ struct fn_invoker<void (Args...)>
 	{
 		auto l_tuple = a_contract->DeserializeArgs(a_msg);
 
-		InvokeFunction(std::forward<Fn>(a_fn), l_tuple);
+		InvokeFunction(std::forward<Fn>(a_fn), std::move(l_tuple));
 
 		return a_contract->SerializeVoidRet(a_msg);
 	}
@@ -171,7 +173,7 @@ struct fn_invoker<Ret (Args...)>
 
 		auto l_tuple = a_contract->DeserializeArgs(a_msg);
 
-		auto l_ret = InvokeFunction(std::forward<Fn>(a_fn), l_tuple);
+		auto l_ret = InvokeFunction(std::forward<Fn>(a_fn), std::move(l_tuple));
 
 		return a_contract->SerializeRet(a_msg, l_ret);
 	}

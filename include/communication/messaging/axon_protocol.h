@@ -39,6 +39,7 @@ public:
 
 protected:
 	virtual void ProcessInternal(CDataBuffer a_buffer) override;
+    virtual void FinishProcessing(CDataBuffer a_buffer); 
 
 private:
 	void p_FindAnchor(char *&a_curr, char *a_end);

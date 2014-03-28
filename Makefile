@@ -46,7 +46,12 @@ LIBS_D = lib/libaxutild.a lib/libaxserd.a lib/libaxcommd.a
 EXES_D = demo/client_demo_debug demo/server_demo_debug
 EXES_R = demo/client_demo_release demo/server_demo_release
 EXES = $(EXES_D) $(EXES_R)
-	    
+
+INCLUDES= -Iinclude \
+		  -Iinclude/serialization \
+		  -Iinclude/communication \
+		  -Ithirdparty/rapidjson/include \
+		  -Ithirdparty/pugixml/src
 
 .PHONY: all clean setup
 
@@ -69,33 +74,21 @@ $(OBJ_UTIL)/%.o: $(SRC_UTIL)/%.cpp
 	$(CC) $(RFLAGS) -c $< -Iinclude -Iinclude/util -o $@ 
 	
 $(OBJ_SER)/%.od: $(SRC_SER)/%.cpp
-	$(CC) $(DFLAGS) -c $< -o $@ \
-			-Iinclude \
-			-Iinclude/serialization \
-			-Ithirdparty/include \
-			-Ithirdparty/pugixml/src \
+	$(CC) $(DFLAGS) -c $< -o $@ $(INCLUDES) \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxutild \
 			-lpugixmld
 
 $(OBJ_SER)/%.o: $(SRC_SER)/%.cpp
-	$(CC) $(RFLAGS) -c $< -o $@ \
-			-Iinclude \
-			-Iinclude/serialization \
-			-Ithirdparty/include \
-			-Ithirdparty/pugixml/src \
+	$(CC) $(RFLAGS) -c $< -o $@ $(INCLUDES) \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxutil \
 			-lpugixml
 
 $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
-	$(CC) $(DFLAGS) -c $< -o $@ \
-			-Iinclude \
-			-Iinclude/communication \
-			-Ithirdparty/include \
-			-Ithirdparty/pugixml/src \
+	$(CC) $(DFLAGS) -c $< -o $@ $(INCLUDES) \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxserd -laxutild \
@@ -103,11 +96,7 @@ $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
 			-levent -levent_pthreads -levent_core
 
 $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
-	$(CC) $(RFLAGS) -c $< -o $@ \
-			-Iinclude \
-			-Iinclude/communication \
-			-Ithirdparty/include \
-			-Ithirdparty/pugixml/src \
+	$(CC) $(RFLAGS) -c $< -o $@ $(INCLUDES) \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxser -laxutil \

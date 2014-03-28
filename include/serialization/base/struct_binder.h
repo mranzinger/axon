@@ -123,6 +123,9 @@ public:
 	CStructBinder(const CStructWriter *a_writer) : m_writer(a_writer) { }
 	CStructBinder(const CStructReader *a_reader) : m_reader(a_reader) { }
 
+	bool IsRead() const { return m_reader; }
+	bool IsWrite() const { return m_writer; }
+
 	template<typename T, typename ...Flags>
 	const CStructBinder &operator()(const std::string &a_name, T &a_val, Flags ...a_flags) const
 	{

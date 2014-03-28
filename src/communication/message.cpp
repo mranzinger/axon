@@ -35,6 +35,16 @@ CMessage::CMessage(AData::Ptr a_msgVal)
 	SetMessage(move(l_struct));
 }
 
+CMessage::CMessage(const CMessage &a_other)
+{
+    Init(a_other.Type());
+
+    SetAction(a_other.GetAction());
+    SetId(a_other.Id());
+    SetRequestId(a_other.RequestId());
+    SetOneWay(a_other.IsOneWay());
+}
+
 CMessage::CMessage(const CMessage& a_other, MessageType a_type)
 {
 	Init(a_type);
