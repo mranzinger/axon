@@ -26,6 +26,8 @@ public:
 
 	virtual void SetProtocol(IProtocol::Ptr a_protocol) = 0;
 
+    virtual std::string ConnectionString() const = 0;
+
 	virtual CMessage::Ptr Send(const CMessage &a_message) = 0;
 	virtual CMessage::Ptr Send(const CMessage &a_message, uint32_t a_timeout) = 0;
 	virtual void SendNonBlocking(const CMessage &a_message) = 0;
@@ -62,6 +64,11 @@ public:
 
 		(void) Send(*l_send, a_timeout);
 	}
+
+    static IAxonClient *GetExecutingInstance();
+
+protected:
+    static void SetExecutingInstance(IAxonClient *a_instance);
 };
 
 } }

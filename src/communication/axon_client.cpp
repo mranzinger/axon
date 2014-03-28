@@ -127,6 +127,13 @@ void CAxonClient::SetProtocol(IProtocol::Ptr a_protocol)
 	m_protocol->SetHandler(bind(&CAxonClient::p_OnMessageReceived, this, placeholders::_1));
 }
 
+string CAxonClient::ConnectionString() const
+{
+    if (!m_connection)
+        return "";
+    return m_connection->ConnectionString();
+}
+
 CMessage::Ptr CAxonClient::Send(const CMessage& a_message)
 {
 
@@ -217,6 +224,8 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 	//      can handle the message.
 	//
 	// If none of the steps succeed, then throw a fault
+
+    SetExecutingInstance(this);
 
 	bool l_handled = false;
 

@@ -49,6 +49,8 @@ public:
 	void SetDefaultProtocol();
 	virtual void SetProtocol(IProtocol::Ptr a_protocol) override;
 
+    std::string ConnectionString() const override;
+
 	virtual CMessage::Ptr Send(const CMessage &a_message) override;
 	virtual CMessage::Ptr Send(const CMessage &a_message, uint32_t a_timeout) override;
 	virtual void SendNonBlocking(const CMessage &a_message) override;
