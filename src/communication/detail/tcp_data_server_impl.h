@@ -337,8 +337,9 @@ inline void CTcpDataServer::Impl::UpdateClientProcTime(CServerConnImpl* a_client
 		return;
 	}
 
+    // Rebalancing temporarily disabled
 	// Re-balance every 10 seconds
-	if ((l_currTime - m_lastRebalance) < seconds(10))
+	/*if ((l_currTime - m_lastRebalance) < seconds(10))
 		return;
 
 	unique_lock<mutex> l_lock(m_rebalanceLock, try_to_lock);
@@ -362,11 +363,14 @@ inline void CTcpDataServer::Impl::UpdateClientProcTime(CServerConnImpl* a_client
 
 	event_add(l_rb->Evt.get(), nullptr);
 
-	event_active(l_rb->Evt.get(), EV_TIMEOUT, 1);
+	event_active(l_rb->Evt.get(), EV_TIMEOUT, 1);*/
 }
 
 inline void CTcpDataServer::Impl::p_DoRebalance()
 {
+    // Rebalancing temporarily disabled
+    return;
+
 #ifdef AXON_VERBOSE
 	cout << endl;
 	cout << "Executing Load Re-balance Routine" << endl;

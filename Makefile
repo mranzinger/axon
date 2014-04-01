@@ -1,4 +1,4 @@
-CC=g++
+CC=g++-4.7
 FLAGS=-std=gnu++11 -g
 DFLAGS=$(FLAGS)
 RFLAGS=-O3 $(FLAGS)
