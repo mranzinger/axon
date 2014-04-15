@@ -51,8 +51,7 @@ INCLUDES= -Iinclude \
 		  -Iinclude/serialization \
 		  -Iinclude/communication \
 		  -Ithirdparty/rapidjson/include \
-		  -Ithirdparty/pugixml/src \
-		  -Ithirdparty/boost
+		  -Ithirdparty/pugixml/src
 
 .PHONY: all clean setup
 
