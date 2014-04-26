@@ -19,9 +19,9 @@ class AXON_COMMUNICATE_API CAxonProtocol
 {
 private:
 	APState m_currState;
-	char m_lenHeader[4];
-	char m_crcHeader[8];
-	char m_crcData[8];
+	char m_lenHeader[8];
+	char m_crcHeader[4];
+	char m_crcData[4];
 	CDataBuffer m_dataBuff;
 	size_t m_stateCurr;
 
@@ -48,10 +48,10 @@ private:
 	void p_ProcCRCDataHeader(char *&a_curr, char *a_end);
 	void p_ProcMessage(char *&a_curr, char *a_end);
 
-	bool p_ReadIntoBuffer(char *a_target, size_t a_targetSize,
+	bool p_ReadIntoBuffer(char *a_target, uint64_t a_targetSize,
 						  char *&a_curr, char *a_end);
 
-	void p_ValidateHeader(size_t a_headerSize);
+	void p_ValidateHeader(uint64_t a_headerSize);
 	void p_ValidateData();
 	void p_Finalize();
 	void p_MoveTo(APState a_state);

@@ -6,12 +6,15 @@
 
 #include "communication/messaging/axon_protocol.h"
 
+#include "util/crc_calc.h"
 #include "serialization/format/axon_serializer.h"
+#include "fault_exception.h"
 
 #include <algorithm>
 
 using namespace std;
 
+using namespace axon::util;
 using namespace axon::serialization;
 
 namespace axon { namespace communication {
@@ -51,7 +54,7 @@ void CAxonProtocol::SetSerializer(ASerializer::Ptr a_serializer)
 
 CDataBuffer CAxonProtocol::SerializeMessage(const CMessage& a_msg) const
 {
-	const size_t l_msgSize = m_serializer->CalcSize(*a_msg.Msg());
+	const uint64_t l_msgSize = m_serializer->CalcSize(*a_msg.Msg());
 
 	if (l_msgSize > numeric_limits<uint32_t>::max())
 		throw runtime_error("The message size cannot exceed 4 GiB.");
@@ -66,11 +69,21 @@ CDataBuffer CAxonProtocol::SerializeMessage(const CMessage& a_msg) const
 	l_opBuff[0] = s_specialToken;
 	memcpy(l_opBuff + 1, &l_msgSize, sizeof(m_lenHeader));
 
-	// TODO: Add the CRC mechanisms
+	// Compute a CRC for the header size. This is simply to add redundancy on the receiving
+	// end to prevent the system from allocating erroneous memory. This is not a security
+	// enhancement because it doesn't detect tampering, only accidental transmission error
+	const uint32_t l_crcHeader = CalcCRC32(&l_msgSize, sizeof(m_lenHeader));
+	memcpy(l_opBuff + 1 + sizeof(m_lenHeader), &l_crcHeader, sizeof(m_crcHeader));
 
+	char *l_opDataBuff = l_opBuff + 1 + sizeof(m_lenHeader) + sizeof(m_crcHeader) + sizeof(m_crcData);
 	m_serializer->SerializeInto(*a_msg.Msg(),
-			l_opBuff + 1 + sizeof(m_lenHeader) + sizeof(m_crcHeader) + sizeof(m_crcData),
+			l_opDataBuff,
 			l_msgSize);
+
+	// Calculate the CRC for the data buffer
+	const uint32_t l_crcData = CalcCRC32(l_opDataBuff, l_msgSize);
+	memcpy(l_opBuff + 1 + sizeof(m_lenHeader) + sizeof(m_crcHeader),
+			&l_crcData, sizeof(m_crcData));
 
 	return move(l_ret);
 }
@@ -131,7 +144,7 @@ void CAxonProtocol::p_ProcCRCMsgHeader(char*& a_curr, char* a_end)
 {
 	if (p_ReadIntoBuffer(m_crcHeader, sizeof(m_crcHeader), a_curr, a_end))
 	{
-		size_t l_headerSize = 0;
+		uint64_t l_headerSize = 0;
 		memcpy(&l_headerSize, m_lenHeader, sizeof(m_lenHeader));
 
 		p_ValidateHeader(l_headerSize);
@@ -185,10 +198,10 @@ void CAxonProtocol::p_Finalize()
     FinishProcessing(move(m_dataBuff));
 }
 
-bool CAxonProtocol::p_ReadIntoBuffer(char* a_target, size_t a_targetSize,
+bool CAxonProtocol::p_ReadIntoBuffer(char* a_target, uint64_t a_targetSize,
 		char*& a_curr, char* a_end)
 {
-	size_t l_numRead = min<size_t>(a_targetSize - m_stateCurr, a_end - a_curr);
+	uint64_t l_numRead = min<uint64_t>(a_targetSize - m_stateCurr, a_end - a_curr);
 
 	memcpy(a_target + m_stateCurr, a_curr, l_numRead);
 	a_curr += l_numRead;
@@ -203,12 +216,27 @@ void CAxonProtocol::p_MoveTo(APState a_state)
 	m_currState = a_state;
 }
 
-void CAxonProtocol::p_ValidateHeader(size_t a_headerSize)
+void CAxonProtocol::p_ValidateHeader(uint64_t a_headerSize)
 {
+	const uint32_t l_calcCrcHeader = CalcCRC32(&a_headerSize, sizeof(m_lenHeader));
+
+	// Read the CRC buffer for the header
+	uint32_t l_actualCrcHeader = 0;
+	memcpy(&l_actualCrcHeader, m_crcHeader, sizeof(m_crcHeader));
+
+	if (l_calcCrcHeader != l_actualCrcHeader)
+		throw CFaultException("Received a message with an invalid CRC in the header");
 }
 
 void CAxonProtocol::p_ValidateData()
 {
+	uint32_t l_actualCrcData = 0;
+	memcpy(&l_actualCrcData, m_crcData, sizeof(m_crcData));
+
+	uint32_t l_calcCrcData = CalcCRC32(m_dataBuff.data(), m_dataBuff.size());
+
+	if (l_calcCrcData != l_actualCrcData)
+		throw CFaultException("Received a message with an invalid CRC in the data buffer");
 }
 
 void CAxonProtocol::OnFinished(const CMessage::Ptr& a_msg)

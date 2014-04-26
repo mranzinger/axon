@@ -1,5 +1,5 @@
 CC=g++-4.7
-FLAGS=-std=gnu++11 -g
+FLAGS=-std=gnu++11 -g -msse4.2
 DFLAGS=$(FLAGS)
 RFLAGS=-O3 $(FLAGS)
 
@@ -68,10 +68,10 @@ setup:
 	mkdir -p $(OBJ_COMM)
 
 $(OBJ_UTIL)/%.od: $(SRC_UTIL)/%.cpp
-	$(CC) $(DFLAGS) -c $< -Iinclude -Iinclude/util -o $@ 
+	$(CC) $(DFLAGS) -c $< $(INCLUDES) -o $@ 
 	
 $(OBJ_UTIL)/%.o: $(SRC_UTIL)/%.cpp
-	$(CC) $(RFLAGS) -c $< -Iinclude -Iinclude/util -o $@ 
+	$(CC) $(RFLAGS) -c $< $(INCLUDES) -o $@ 
 	
 $(OBJ_SER)/%.od: $(SRC_SER)/%.cpp
 	$(CC) $(DFLAGS) -c $< -o $@ $(INCLUDES) \
