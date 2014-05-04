@@ -8,11 +8,19 @@
 
 namespace axon { namespace serialization {
 
+static CPolyManager *s_instance = nullptr;
+
+CPolyManager::CPolyManager()
+{
+
+}
+
 CPolyManager* CPolyManager::p_GetInstance()
 {
-	static CPolyManager s_instance;
+	if (!s_instance)
+		s_instance = new CPolyManager;
 
-	return &s_instance;
+	return s_instance;
 }
 
 }

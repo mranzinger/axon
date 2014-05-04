@@ -131,7 +131,7 @@ public:
 	}
 
 private:
-	CPolyManager() { }
+	CPolyManager();
 	CPolyManager(const CPolyManager &) = delete;
 	CPolyManager &operator=(const CPolyManager &) = delete;
 
