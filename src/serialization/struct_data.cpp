@@ -7,6 +7,10 @@
 
 #include "base/struct_data.h"
 
+#include <sstream>
+
+using namespace std;
+
 namespace axon { namespace serialization {
 
 CStructData::CStructData()
@@ -15,34 +19,34 @@ CStructData::CStructData()
 }
 
 CStructData::CStructData(CSerializationContext a_context)
-    : AData(DataType::Struct, std::move(a_context))
+    : AData(DataType::Struct, move(a_context))
 {
 }
 
-void CStructData::Add(std::string a_name, AData::Ptr a_val)
+void CStructData::Add(string a_name, AData::Ptr a_val)
 {
-    m_props.emplace_back(std::move(a_name), std::move(a_val));
+    m_props.emplace_back(move(a_name), move(a_val));
 }
 
-void CStructData::Set(const std::string &a_name, AData::Ptr a_val)
+void CStructData::Set(const string &a_name, AData::Ptr a_val)
 {
-    auto iter = std::find_if(m_props.begin(), m_props.end(),
+    auto iter = find_if(m_props.begin(), m_props.end(),
             [&a_name] (const TProp &a_prop)
             {
                 return a_name == a_prop.first;
             });
 
     if (iter == m_props.end())
-        Add(a_name, std::move(a_val));
+        Add(a_name, move(a_val));
     else
-        iter->second = std::move(a_val);
+        iter->second = move(a_val);
 }
 
-const AData::Ptr &CStructData::Get(const std::string &a_name) const
+const AData::Ptr &CStructData::Get(const string &a_name) const
 {
     static const AData::Ptr s_missing;
 
-    auto iter = std::find_if(m_props.begin(), m_props.end(),
+    auto iter = find_if(m_props.begin(), m_props.end(),
             [&a_name] (const TProp &a_prop)
             {
                 return a_name == a_prop.first;
@@ -54,9 +58,9 @@ const AData::Ptr &CStructData::Get(const std::string &a_name) const
         return s_missing;
 }
 
-AData *CStructData::Find(const std::string &a_name) const
+AData *CStructData::Find(const string &a_name) const
 {
-    auto iter = std::find_if(m_props.begin(), m_props.end(),
+    auto iter = find_if(m_props.begin(), m_props.end(),
             [&a_name] (const TProp &a_prop)
             {
                 return a_name == a_prop.first;
@@ -68,12 +72,12 @@ AData *CStructData::Find(const std::string &a_name) const
         return nullptr;
 }
 
-std::string CStructData::ToJsonString(size_t a_numSpaces) const
+string CStructData::ToJsonString(size_t a_numSpaces) const
 {
-    std::ostringstream oss;
-    oss << "{" << std::endl;
+    ostringstream oss;
+    oss << "{" << endl;
 
-    std::string l_spaces(a_numSpaces + 4, ' ');
+    string l_spaces(a_numSpaces + 4, ' ');
 
     for (auto iter = m_props.begin(), end = m_props.end(); iter != end; ++iter)
     {
@@ -85,9 +89,9 @@ std::string CStructData::ToJsonString(size_t a_numSpaces) const
 
         if (iter != (end - 1))
             oss << ", ";
-        oss << std::endl;
+        oss << endl;
     }
-    oss << std::string(a_numSpaces, ' ') << "}";
+    oss << string(a_numSpaces, ' ') << "}";
     return oss.str();
 }
 
