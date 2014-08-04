@@ -118,13 +118,19 @@ lib/libaxserd.a: $(SER_OBJS_D)
 	ar rvs $@ $^
 
 lib/libaxserd.so: $(SER_OBJS_D) lib/libaxutild.so
-	$(CC) $(DFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutild.so
+	$(CC) $(DFLAGS) -shared -o $@ $(SER_OBJS_D) $(INCLUDES) \
+                -Llib -Lthirdparty/pugixml/lib \
+                -laxutild \
+                -lpugixmld
 	
 lib/libaxcommd.a: $(COM_OBJS_D)
 	ar rvs $@ $^
 
 lib/libaxcommd.so: $(COM_OBJS_D) lib/libaxserd.so
-	$(CC) $(DFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutild.so lib/libaxserd.so
+	$(CC) $(DFLAGS) -shared -o $@ $(COM_OBJS_D) $(INCLUDES) \
+            -Llib \
+            -laxutild -laxserd \
+            -levent -levent_pthreads
 
 lib/libaxutil.a: $(UTIL_OBJS)
 	ar rvs $@ $^
@@ -136,13 +142,19 @@ lib/libaxser.a: $(SER_OBJS)
 	ar rvs $@ $^
 	
 lib/libaxser.so: $(SER_OBJS) lib/libaxutil.so
-	$(CC) $(RFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutil.so
+	$(CC) $(RFLAGS) -shared -o $@ $(SER_OBJS) $(INCLUDES) \
+            -Llib -Lthirdparty/pugixml/lib \
+            -laxutil \
+            -lpugixml
 
 lib/libaxcomm.a: $(COM_OBJS)
 	ar rvs $@ $^
 
 lib/libaxcomm.so: $(COM_OBJS) lib/libaxser.so
-	$(CC) $(RFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutil.so lib/libaxser.so
+	$(CC) $(RFLAGS) -shared -o $@ $(COM_OBJS) $(INCLUDES) \
+            -Llib \
+            -laxutil -laxser \
+            -levent -levent_pthreads
 
 demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
@@ -183,3 +195,4 @@ demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 clean:
 	rm -rf lib
 	rm -rf obj
+	rm -rf $(EXES)
