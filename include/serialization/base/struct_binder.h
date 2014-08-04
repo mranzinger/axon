@@ -104,10 +104,12 @@ public:
 	{
 		const auto &l_flags = SetSerFlags(m_data->Context(), a_flags...);
 
-		auto &data = m_data->Get(a_name);
+		const AData *data = m_data->Find(a_name);
 
 		if (data)
-			Deserialize(data, a_val);
+		{
+		    Deserialize(*data, a_val);
+		}
 
 		return *this;
 	}

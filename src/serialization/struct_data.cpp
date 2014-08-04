@@ -44,8 +44,6 @@ void CStructData::Set(const string &a_name, AData::Ptr a_val)
 
 const AData::Ptr &CStructData::Get(const string &a_name) const
 {
-    static const AData::Ptr s_missing;
-
     auto iter = find_if(m_props.begin(), m_props.end(),
             [&a_name] (const TProp &a_prop)
             {
@@ -55,7 +53,7 @@ const AData::Ptr &CStructData::Get(const string &a_name) const
     if (iter != m_props.end())
         return iter->second;
     else
-        return s_missing;
+        throw runtime_error("The specified member was not found. Member: " + a_name);
 }
 
 AData *CStructData::Find(const string &a_name) const
