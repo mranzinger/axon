@@ -12,6 +12,8 @@
 #include <atomic>
 #include <iostream>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 
 #include "dll_export.h"
 

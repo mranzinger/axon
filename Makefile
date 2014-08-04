@@ -1,5 +1,5 @@
 CC=g++-4.7
-FLAGS=-std=gnu++11 -g -msse4.2
+FLAGS=-std=c++11 -g -msse4.2 -fPIC
 DFLAGS=$(FLAGS)
 RFLAGS=-O3 $(FLAGS)
 
@@ -40,8 +40,13 @@ SRC = $(UTIL_SRC) $(SER_SRC) $(COM_SRC)
 OBJS = $(UTIL_OBJS) $(SER_OBJS) $(COM_OBJS)
 OBJS_D = $(UTIL_OBJS_D) $(SER_OBJS_D) $(COM_OBJS_D)
 
-LIBS = lib/libaxutil.a lib/libaxser.a lib/libaxcomm.a
-LIBS_D = lib/libaxutild.a lib/libaxserd.a lib/libaxcommd.a
+LIBS = lib/libaxutil.a lib/libaxutil.so \
+       lib/libaxser.a lib/libaxser.so \
+       lib/libaxcomm.a lib/libaxcomm.so
+
+LIBS_D = lib/libaxutild.a lib/libaxutild.so \
+         lib/libaxserd.a lib/libaxserd.so \
+         lib/libaxcommd.a lib/libaxcommd.so
 
 EXES_D = demo/client_demo_debug demo/server_demo_debug
 EXES_R = demo/client_demo_release demo/server_demo_release
@@ -105,21 +110,39 @@ $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
 
 lib/libaxutild.a: $(UTIL_OBJS_D)
 	ar rvs $@ $^
+
+lib/libaxutild.so: $(UTIL_OBJS_D)
+	$(CC) $(DFLAGS) -shared -o $@ $^ $(INCLUDES)
 	
 lib/libaxserd.a: $(SER_OBJS_D)
 	ar rvs $@ $^
+
+lib/libaxserd.so: $(SER_OBJS_D) lib/libaxutild.so
+	$(CC) $(DFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutild.so
 	
 lib/libaxcommd.a: $(COM_OBJS_D)
 	ar rvs $@ $^
 
+lib/libaxcommd.so: $(COM_OBJS_D) lib/libaxserd.so
+	$(CC) $(DFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutild.so lib/libaxserd.so
+
 lib/libaxutil.a: $(UTIL_OBJS)
 	ar rvs $@ $^
-	
+
+lib/libaxutil.so: $(UTIL_OBJS)
+	$(CC) $(RFLAGS) -shared -o $@ $^ $(INCLUDES)
+
 lib/libaxser.a: $(SER_OBJS)
 	ar rvs $@ $^
 	
+lib/libaxser.so: $(SER_OBJS) lib/libaxutil.so
+	$(CC) $(RFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutil.so
+
 lib/libaxcomm.a: $(COM_OBJS)
 	ar rvs $@ $^
+
+lib/libaxcomm.so: $(COM_OBJS) lib/libaxser.so
+	$(CC) $(RFLAGS) -shared -o $@ $^ $(INCLUDES) lib/libaxutil.so lib/libaxser.so
 
 demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
@@ -127,7 +150,8 @@ demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
-		-levent -levent_pthreads
+		-levent -levent_pthreads \
+        -lsnappy
 
 demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
@@ -135,7 +159,8 @@ demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
-		-levent -levent_pthreads
+		-levent -levent_pthreads \
+        -lsnappy
 
 demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(SERVER_DEMO_SRC) -o $@ \
@@ -143,7 +168,8 @@ demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
-		-levent -levent_pthreads
+		-levent -levent_pthreads \
+        -lsnappy
 
 demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(SERVER_DEMO_SRC) -o $@ \
@@ -151,7 +177,8 @@ demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
-		-levent -levent_pthreads
+		-levent -levent_pthreads \
+        -lsnappy
 
 clean:
 	rm -rf lib
