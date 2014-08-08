@@ -3,6 +3,10 @@ FLAGS=-std=c++11 -g -msse4.2 -fPIC
 DFLAGS=$(FLAGS)
 RFLAGS=-O3 $(FLAGS)
 
+THIRD_PARTY ?= /home/mike/dev/ThirdParty
+SNAPPY_PATH ?= $(THIRD_PARTY)/snappy/install
+LIBEVENT_PATH ?= $(THIRD_PARTY)/libevent/install
+
 INC_ROOT = include
 SRC_ROOT = src
 
@@ -56,7 +60,9 @@ INCLUDES= -Iinclude \
 		  -Iinclude/serialization \
 		  -Iinclude/communication \
 		  -Ithirdparty/rapidjson/include \
-		  -Ithirdparty/pugixml/src
+		  -Ithirdparty/pugixml/src \
+          -I$(SNAPPY_PATH)/include \
+          -I$(LIBEVENT_PATH)/include
 
 .PHONY: all clean setup
 
@@ -83,14 +89,16 @@ $(OBJ_SER)/%.od: $(SRC_SER)/%.cpp
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxutild \
-			-lpugixmld
+			-lpugixmld \
+            -L$(SNAPPY_PATH)/lib -lsnappy
 
 $(OBJ_SER)/%.o: $(SRC_SER)/%.cpp
 	$(CC) $(RFLAGS) -c $< -o $@ $(INCLUDES) \
 			-Lthirdparty/pugixml/lib \
 			-Llib \
 			-laxutil \
-			-lpugixml
+			-lpugixml \
+            -L$(SNAPPY_PATH)/lib -lsnappy
 
 $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
 	$(CC) $(DFLAGS) -c $< -o $@ $(INCLUDES) \
@@ -98,7 +106,8 @@ $(OBJ_COMM)/%.od: $(SRC_COMM)/%.cpp
 			-Llib \
 			-laxserd -laxutild \
 			-lpugixmld \
-			-levent -levent_pthreads -levent_core
+			-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads -levent_core \
+            -L$(SNAPPY_PATH)/lib -lsnappy
 
 $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
 	$(CC) $(RFLAGS) -c $< -o $@ $(INCLUDES) \
@@ -106,7 +115,8 @@ $(OBJ_COMM)/%.o: $(SRC_COMM)/%.cpp
 			-Llib \
 			-laxser -laxutil \
 			-lpugixml \
-			-levent -levent_pthreads -levent_core
+			-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads -levent_core \
+            -L$(SNAPPY_PATH)/lib -lsnappy
 
 lib/libaxutild.a: $(UTIL_OBJS_D)
 	ar rvs $@ $^
@@ -121,8 +131,9 @@ lib/libaxserd.so: $(SER_OBJS_D) lib/libaxutild.so
 	$(CC) $(DFLAGS) -shared -o $@ $(SER_OBJS_D) $(INCLUDES) \
                 -Llib -Lthirdparty/pugixml/lib \
                 -laxutild \
-                -lpugixmld
-	
+                -lpugixmld \
+                -L$(SNAPPY_PATH)/lib -lsnappy
+
 lib/libaxcommd.a: $(COM_OBJS_D)
 	ar rvs $@ $^
 
@@ -130,7 +141,8 @@ lib/libaxcommd.so: $(COM_OBJS_D) lib/libaxserd.so
 	$(CC) $(DFLAGS) -shared -o $@ $(COM_OBJS_D) $(INCLUDES) \
             -Llib \
             -laxutild -laxserd \
-            -levent -levent_pthreads
+            -L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
+            -L$(SNAPPY_PATH)/lib -lsnappy
 
 lib/libaxutil.a: $(UTIL_OBJS)
 	ar rvs $@ $^
@@ -145,7 +157,8 @@ lib/libaxser.so: $(SER_OBJS) lib/libaxutil.so
 	$(CC) $(RFLAGS) -shared -o $@ $(SER_OBJS) $(INCLUDES) \
             -Llib -Lthirdparty/pugixml/lib \
             -laxutil \
-            -lpugixml
+            -lpugixml \
+            -L$(SNAPPY_PATH)/lib -lsnappy
 
 lib/libaxcomm.a: $(COM_OBJS)
 	ar rvs $@ $^
@@ -154,7 +167,7 @@ lib/libaxcomm.so: $(COM_OBJS) lib/libaxser.so
 	$(CC) $(RFLAGS) -shared -o $@ $(COM_OBJS) $(INCLUDES) \
             -Llib \
             -laxutil -laxser \
-            -levent -levent_pthreads
+            -L$(LIBEVENT_PATH)/lib -levent -levent_pthreads
 
 demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
@@ -162,17 +175,17 @@ demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
-		-levent -levent_pthreads \
-        -lsnappy
-
+		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
+        -L$(SNAPPY_PATH)/lib -lsnappy
+        
 demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
-		-levent -levent_pthreads \
-        -lsnappy
+		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
+        -L$(SNAPPY_PATH)/lib -lsnappy
 
 demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(SERVER_DEMO_SRC) -o $@ \
@@ -180,18 +193,18 @@ demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
-		-levent -levent_pthreads \
-        -lsnappy
-
+		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
+        -L$(SNAPPY_PATH)/lib -lsnappy
+        
 demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(SERVER_DEMO_SRC) -o $@ \
 		-Iinclude \
 		-Llib \
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
-		-levent -levent_pthreads \
-        -lsnappy
-
+		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
+        -L$(SNAPPY_PATH)/lib -lsnappy
+        
 clean:
 	rm -rf lib
 	rm -rf obj

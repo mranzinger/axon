@@ -6,7 +6,10 @@ CRELEASE=$(CFLAGS) -O3
 SOURCES=*.cpp
 HEADERS=*.hpp
 
-all: debug release
+all: setup debug release
+
+setup:
+	mkdir -p ../lib
 
 debug: $(SOURCES) $(HEADERS)
 	$(CC) $(CDEBUG) -c $(SOURCES)
