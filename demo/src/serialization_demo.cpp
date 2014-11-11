@@ -85,6 +85,10 @@ private:
 	}
 };
 
+// This is the magic function that tells Axon how to properly serialize and deserialize
+// your object. The benefit of it being a free function is that you can implement this in
+// a completely separate header, allowing you to separate your business objects from their
+// serialization
 void BindStruct(const ser::CStructBinder &binder, Node &node)
 {
 	binder("Value", node.Value)
@@ -97,19 +101,30 @@ public:
 	typedef shared_ptr<SomeType> Ptr;
 
 	SomeType(string name = "")
-		: m_name(move(name)) { }
+		: m_name(move(name)), m_nodeCt(0) { }
 	SomeType(string name, vector<Node::Ptr> nodes)
-		: m_name(move(name)), m_nodes(move(nodes)) { }
-
-	void Bind(const ser::CStructBinder &binder)
+		: m_name(move(name)), m_nodes(move(nodes))
 	{
-		binder("Name", m_name)
-		      ("Nodes", m_nodes);
+		m_nodeCt = m_nodes.size();
+	}
+
+	void Write(const ser::CStructWriter &writer) const
+	{
+		writer("Name", m_name)
+			  ("Nodes", m_nodes);
+	}
+	void Read(const ser::CStructReader &reader)
+	{
+		reader("Name", m_name)
+			  ("Nodes", m_nodes);
+		m_nodeCt = m_nodes.size();
 	}
 
 	bool operator==(const SomeType &other) const
 	{
 		if (m_name != other.m_name)
+			return false;
+		if (m_nodeCt != other.m_nodeCt)
 			return false;
 
 		if (m_nodes.size() != other.m_nodes.size())
@@ -131,11 +146,20 @@ public:
 private:
 	string m_name;
 	vector<Node::Ptr> m_nodes;
+	size_t m_nodeCt;
 };
 
-void BindStruct(const ser::CStructBinder &binder, SomeType &st)
+// If you need to do something differently when writing out an object or reading it back in,
+// then you can implement two functions instead of the single bind function, which enables
+// you to customize logic for the read and write cases
+void WriteStruct(const ser::CStructWriter &writer, const SomeType &st)
 {
-	st.Bind(binder);
+	st.Write(writer);
+}
+
+void ReadStruct(const ser::CStructReader &reader, SomeType &st)
+{
+	st.Read(reader);
 }
 
 int main(int argc, char *argv[])
