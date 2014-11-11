@@ -29,6 +29,7 @@ COM_SRC = $(wildcard $(SRC_COMM)/*.cpp) $(wildcard $(SRC_COMM)/detail/*.h)
 
 CLIENT_DEMO_SRC = $(SRC_DEMO)/client_demo.cpp
 SERVER_DEMO_SRC = $(SRC_DEMO)/server_demo.cpp
+SER_DEMO_SRC = $(SRC_DEMO)/serialization_demo.cpp
 
 UTIL_OBJS = $(patsubst $(SRC_ROOT)/util/%.cpp,$(OBJ_UTIL)/%.o,$(UTIL_SRC))
 SER_OBJS = $(patsubst $(SRC_ROOT)/serialization/%.cpp,$(OBJ_ROOT)/serialization/%.o,$(SER_SRC))
@@ -52,8 +53,8 @@ LIBS_D = lib/libaxutild.a lib/libaxutild.so \
          lib/libaxserd.a lib/libaxserd.so \
          lib/libaxcommd.a lib/libaxcommd.so
 
-EXES_D = demo/client_demo_debug demo/server_demo_debug
-EXES_R = demo/client_demo_release demo/server_demo_release
+EXES_D = demo/client_demo_debug demo/server_demo_debug demo/serialization_demo_debug
+EXES_R = demo/client_demo_release demo/server_demo_release demo/serialization_demo_release
 EXES = $(EXES_D) $(EXES_R)
 
 INCLUDES= -Iinclude \
@@ -168,6 +169,22 @@ lib/libaxcomm.so: $(COM_OBJS) lib/libaxser.so
             -Llib \
             -laxutil -laxser \
             -L$(LIBEVENT_PATH)/lib -levent -levent_pthreads
+
+demo/serialization_demo_debug: $(SER_DEMO_SRC) $(LIBS_D)
+	$(CC) $(DFLAGS) $(SER_DEMO_SRC) -o $@ \
+		-Iinclude \
+		-Llib \
+		-Lthirdparty/pugixml/lib \
+		-laxserd -laxutild -lpugixmld \
+		-L$(SNAPPY_PATH)/lib -lsnappy
+
+demo/serialization_demo_release: $(SER_DEMO_SRC) $(LIBS)
+	$(CC) $(RFLAGS) $(SER_DEMO_SRC) -o $@ \
+		-Iinclude \
+		-Llib \
+		-Lthirdparty/pugixml/lib \
+		-laxser -laxutil -lpugixml \
+		-L$(SNAPPY_PATH)/lib -lsnappy
 
 demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
