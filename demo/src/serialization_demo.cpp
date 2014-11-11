@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <assert.h>
 
 #include "serialization/master.h"
 
@@ -22,31 +23,56 @@ public:
 	// demo far more verbose
 	typedef shared_ptr<Node> Ptr;
 
-	float Value;
+	int Value;
 	vector<Ptr> Children;
 
-	Node(float val = 0.0f) : Value(val) { }
-	Node(float val, vector<Ptr> children)
+	Node(int val = 0) : Value(val) { }
+	Node(int val, vector<Ptr> children)
 		: Value(val), Children(move(children)) { }
 	template<typename ...Nodes>
-	Node(float val, Nodes ...children)
+	Node(int val, Nodes ...children)
 		: Value(val)
 	{
 		AddChildren(move(children)...);
 	}
 
-	static Ptr Create(float val = 0.0f)
+	static Ptr Create(int val = 0)
 	{
 		return Ptr(new Node(val));
 	}
-	static Ptr Create(float val, vector<Ptr> children)
+	static Ptr Create(int val, vector<Ptr> children)
 	{
 		return Ptr(new Node(val, move(children)));
 	}
 	template<typename ...Nodes>
-	static Ptr Create(float val, Nodes ...children)
+	static Ptr Create(int val, Nodes ...children)
 	{
 		return Ptr(new Node(val, move(children)...));
+	}
+
+	bool operator==(const Node &other) const
+	{
+		if (Value != other.Value)
+			return false;
+
+		if (Children.size() != other.Children.size())
+			return false;
+
+		for (size_t i = 0; i < Children.size(); ++i)
+		{
+			if ((Children[i].get() == nullptr && other.Children[i].get() != nullptr) ||
+			    (Children[i].get() != nullptr && other.Children[i].get() == nullptr))
+				return false;
+
+			if (*Children[i] != *other.Children[i])
+				return false;
+		}
+
+		return true;
+	}
+	bool operator!=(const Node &other) const
+	{
+		return not (*this == other);
 	}
 
 private:
@@ -81,6 +107,27 @@ public:
 		      ("Nodes", m_nodes);
 	}
 
+	bool operator==(const SomeType &other) const
+	{
+		if (m_name != other.m_name)
+			return false;
+
+		if (m_nodes.size() != other.m_nodes.size())
+			return false;
+
+		for (size_t i = 0; i < m_nodes.size(); ++i)
+		{
+			if ((m_nodes[i].get() == nullptr && other.m_nodes[i].get() != nullptr) ||
+			    (m_nodes[i].get() != nullptr && other.m_nodes[i].get() == nullptr))
+				return false;
+
+			if (*m_nodes[i] != *other.m_nodes[i])
+				return false;
+		}
+
+		return true;
+	}
+
 private:
 	string m_name;
 	vector<Node::Ptr> m_nodes;
@@ -107,11 +154,30 @@ int main(int argc, char *argv[])
 		}
 	};
 
+	// Serialize the object to JSON
 	cout << "JSON Serialization:" << endl << endl
 		 << ser::CJsonSerializer().Serialize(st) << endl << endl << endl;
 
+	// Serialize the same object to XML
 	cout << "XML Serialization:" << endl << endl
 	     << ser::CXmlSerializer().Serialize(st) << endl;
+
+	// Serialize the object, then deserialize it, then verify that
+	// the reconstruction was proper
+	string jsonSerialized = ser::CJsonSerializer().Serialize(st);
+
+	auto dsJson = ser::CJsonSerializer().Deserialize<SomeType>(jsonSerialized);
+
+	assert(st == dsJson);
+
+	// Convert the JSON serialization to XML without an intermediate type
+	ser::AData::Ptr opaque = ser::CJsonSerializer().Deserialize(jsonSerialized);
+
+	string xmlSerialized = ser::CXmlSerializer().SerializeData(*opaque);
+
+	auto dsXml = ser::CXmlSerializer().Deserialize<SomeType>(xmlSerialized);
+
+	assert(dsXml == st && dsXml == dsJson);
 
 	return EXIT_SUCCESS;
 }

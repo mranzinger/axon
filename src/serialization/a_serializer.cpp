@@ -58,6 +58,12 @@ AData::Ptr ASerializer::DeserializeDataFromFile(const std::string &a_fileName) c
 	return DeserializeData(l_str.data(), l_str.data() + len);
 }
 
-} }
+AData::Ptr ASerializer::Deserialize(const std::string& a_str) const
+{
+	return DeserializeData(a_str.c_str(), a_str.c_str() + a_str.size());
+}
+
+}
+}
 
 

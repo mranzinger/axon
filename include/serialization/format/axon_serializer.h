@@ -21,7 +21,6 @@ public:
 
 	virtual size_t SerializeInto(const AData &a_data, char *a_buffer, size_t a_bufferSize) const override;
 
-protected:
 	virtual std::string SerializeData(const AData &a_data) const override;
 
 	virtual AData::Ptr DeserializeData(const char *a_buf, const char *a_endBuf) const override;
