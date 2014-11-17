@@ -1,3 +1,5 @@
 /lib
 /obj
 thirdparty/pugixml/lib/
+demo/serialization_demo_debug
+demo/serialization_demo_release

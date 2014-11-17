@@ -120,6 +120,18 @@ public:
 		m_nodeCt = m_nodes.size();
 	}
 
+	const string &GetName() const { return m_name; }
+	void SetName(string a_name) { m_name = move(a_name); }
+
+	const vector<Node::Ptr> &GetNodes() const { return m_nodes; }
+
+	void SetNodes(vector<Node::Ptr> a_nodes)
+	{
+	    m_nodes = move(a_nodes);
+
+	    m_nodeCt = m_nodes.size();
+	}
+
 	bool operator==(const SomeType &other) const
 	{
 		if (m_name != other.m_name)
@@ -152,14 +164,10 @@ private:
 // If you need to do something differently when writing out an object or reading it back in,
 // then you can implement two functions instead of the single bind function, which enables
 // you to customize logic for the read and write cases
-void WriteStruct(const ser::CStructWriter &writer, const SomeType &st)
+void BindStruct(const ser::CStructBinder &a_binder, SomeType &a_val)
 {
-	st.Write(writer);
-}
-
-void ReadStruct(const ser::CStructReader &reader, SomeType &st)
-{
-	st.Read(reader);
+    a_binder("Name", a_val, &SomeType::GetName, &SomeType::SetName)
+            ("Nodes", a_val, &SomeType::GetNodes, &SomeType::SetNodes);
 }
 
 int main(int argc, char *argv[])

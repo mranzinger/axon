@@ -113,6 +113,41 @@ public:
 
 		return *this;
 	}
+
+	template<typename ObjType, typename T, typename ...Flags>
+	const CStructReader &operator()(const std::string &a_name, ObjType &a_obj, void (ObjType::*mem_fun) (T), Flags ...a_flags) const
+	{
+	    const auto &l_flags = SetSerFlags(m_data->Context(), a_flags...);
+
+	    const AData *data = m_data->Find(a_name);
+
+	    if (data)
+	    {
+	        T l_val;
+	        Deserialize(*data, l_val);
+
+	        (a_obj.*mem_fun)(std::move(l_val));
+	    }
+
+	    return *this;
+	}
+	template<typename ObjType, typename T, typename ...Flags>
+	const CStructReader &operator()(const std::string &a_name, ObjType &a_obj, void (ObjType::*mem_fun) (const T &), Flags ...a_flags) const
+	{
+	    const auto &l_flags = SetSerFlags(m_data->Context(), a_flags...);
+
+        const AData *data = m_data->Find(a_name);
+
+        if (data)
+        {
+            T l_val;
+            Deserialize(*data, l_val);
+
+            (a_obj.*mem_fun)(l_val);
+        }
+
+        return *this;
+	}
 };
 
 class AXON_SERIALIZE_API CStructBinder
@@ -138,6 +173,131 @@ public:
 
 		return *this;
 	}
+
+	template<typename ObjType, typename T, typename ...Flags>
+	const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+	                                const T &(ObjType::*getter) () const,
+	                                void (ObjType::*setter) (T),
+	                                Flags ...a_flags) const
+	{
+	    if (m_writer)
+	        (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+	    else
+	        (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+	    return *this;
+	}
+
+	template<typename ObjType, typename T, typename ...Flags>
+	const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+	                                T (ObjType::*getter) () const,
+	                                void (ObjType::*setter) (T),
+	                                Flags ...a_flags) const
+	{
+	    if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+	    return *this;
+	}
+
+	template<typename ObjType, typename T, typename ...Flags>
+    const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+                                    const T &(ObjType::*getter) (),
+                                    void (ObjType::*setter) (T),
+                                    Flags ...a_flags) const
+    {
+        if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+        return *this;
+    }
+
+    template<typename ObjType, typename T, typename ...Flags>
+    const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+                                    T (ObjType::*getter) (),
+                                    void (ObjType::*setter) (T),
+                                    Flags ...a_flags) const
+    {
+        if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+        return *this;
+    }
+
+    template<typename ObjType, typename T, typename ...Flags>
+    const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+                                    const T &(ObjType::*getter) () const,
+                                    void (ObjType::*setter) (const T &),
+                                    Flags ...a_flags) const
+    {
+        if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+        return *this;
+    }
+
+    template<typename ObjType, typename T, typename ...Flags>
+    const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+                                    T (ObjType::*getter) () const,
+                                    void (ObjType::*setter) (const T &),
+                                    Flags ...a_flags) const
+    {
+        if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+        return *this;
+    }
+
+    template<typename ObjType, typename T, typename ...Flags>
+    const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+                                    const T &(ObjType::*getter) (),
+                                    void (ObjType::*setter) (const T &),
+                                    Flags ...a_flags) const
+    {
+        if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+        return *this;
+    }
+
+    template<typename ObjType, typename T, typename ...Flags>
+    const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+                                    T (ObjType::*getter) (),
+                                    void (ObjType::*setter) (const T &),
+                                    Flags ...a_flags) const
+    {
+        if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, a_obj, setter, a_flags...);
+
+        return *this;
+    }
+
+    template<typename ObjType, typename T, typename ...Flags>
+    const CStructBinder &operator()(const std::string &a_name, ObjType &a_obj,
+                                    T &(ObjType::*getter) (),
+                                    Flags ...a_flags) const
+    {
+        if (m_writer)
+            (*m_writer)(a_name, (a_obj.*getter)(), a_flags...);
+        else
+            (*m_reader)(a_name, (a_obj.*getter)(), a_flags...);
+
+        return *this;
+    }
 };
 
 } }
