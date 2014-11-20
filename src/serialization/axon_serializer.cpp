@@ -205,7 +205,7 @@ std::string CAxonSerializer::SerializeData(const AData& a_data) const
 
 	std::string l_ret(l_writeSize, '\0');
 
-	if (SerializeInto(a_data, const_cast<char*>(l_ret.data()), l_writeSize)
+	if (SerializeInto(a_data, &l_ret[0], l_writeSize)
 			!= l_writeSize)
 	{
 		throw runtime_error("Internal Error. Did not serialize properly.");
