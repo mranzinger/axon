@@ -33,6 +33,8 @@ struct MasterContext
 	unordered_map<size_t, string> ReverseMap;
 };
 
+namespace {
+
 size_t p_CalcSize(const AData &a_data, MasterContext &a_mc, DataType a_knownType = DataType::Unknown);
 size_t p_CalcHeaderSize(const AData &a_data, MasterContext &a_mc);
 
@@ -151,6 +153,8 @@ T ReadValue(const char *&a_buff)
 	return move(l_ret);
 }
 
+}
+
 size_t CAxonSerializer::CalcSize(const AData& a_data) const
 {
 	MasterContext::Ptr l_master(new MasterContext);
@@ -230,6 +234,8 @@ size_t CAxonSerializer::p_EstablishSize(const AData& a_data) const
 		return l_cxt->StorageSize;
 	}
 }
+
+namespace {
 
 inline size_t CalcBufferSize(const CBufferData &a_data)
 {
@@ -789,7 +795,7 @@ inline void ReadHeader(const char*& a_buff, MasterContext& a_mc)
 	}
 }
 
-
+}
 
 
 

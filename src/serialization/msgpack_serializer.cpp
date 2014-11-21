@@ -20,6 +20,8 @@ typedef uint64_t ulong;
 
 namespace axon { namespace serialization {
 
+namespace {
+
 //--------- Format Definitions ----------------------
 const byte POS_FIX_INT = 0;
 const byte FIX_MAP = 0x80;
@@ -170,7 +172,7 @@ struct int_helper_t<IntType, true>
 
             if (v2 <= IntType(0x1f))
             {
-                WriteValue(a_buff, NEG_FIX_INT | byte(v2));
+                WriteValue<uint8_t>(a_buff, NEG_FIX_INT | byte(v2));
             }
             else if (v2 <= IntType(0x7f))
             {
@@ -229,7 +231,7 @@ struct int_helper_t<IntType, false>
     {
         if (val <= IntType(0x7f))
         {
-            WriteValue(a_buff, POS_FIX_INT | byte(val));
+            WriteValue<uint8_t>(a_buff, POS_FIX_INT | byte(val));
         }
         else if (val <= IntType(0xff))
         {
@@ -320,22 +322,22 @@ struct prim_helper<string>
     {
         if (a_val.size() <= 0x1f)
         {
-            WriteValue(a_buff, FIX_STR | byte(a_val.size()));
+            WriteValue<uint8_t>(a_buff, FIX_STR | byte(a_val.size()));
         }
         else if (a_val.size() <= 0xff)
         {
             WriteValue(a_buff, STR_8);
-            WriteValue(a_buff, byte(a_val.size()));
+            WriteValue<uint8_t>(a_buff, a_val.size());
         }
         else if (a_val.size() <= 0xffff)
         {
             WriteValue(a_buff, STR_16);
-            WriteValue(a_buff, uint16_t(a_val.size()));
+            WriteValue<uint16_t>(a_buff, a_val.size());
         }
         else
         {
             WriteValue(a_buff, STR_32);
-            WriteValue(a_buff, uint32_t(a_val.size()));
+            WriteValue<uint32_t>(a_buff, a_val.size());
         }
 
         WriteRawBytes(a_buff, a_val.c_str(), a_val.size());
@@ -412,7 +414,8 @@ inline void WriteData(char *&a_buff, const AData &a_data)
 {
 #define WRITE_PRIM(name, type) \
     case DataType::name: \
-        WritePrimitive(a_buff, static_cast<const CPrimData<type> &>(a_data).GetValue())
+        WritePrimitive(a_buff, static_cast<const CPrimData<type> &>(a_data).GetValue()); \
+        break
 
     switch (a_data.Type())
     {
@@ -457,18 +460,18 @@ inline void WriteData(char *&a_buff, const AData &a_data)
 }
 
 AData::Ptr ReadString(const char *&a_buff, byte a_type, const CSerializationContext &a_context,
-                      size_t a_length = 0);
+                      size_t a_length = SIZE_MAX);
 AData::Ptr ReadArray(const char *&a_buff, byte a_type, const CSerializationContext &a_context,
-                     size_t a_length = 0);
+                     size_t a_length = SIZE_MAX);
 AData::Ptr ReadStruct(const char *&a_buff, byte a_type, const CSerializationContext &a_context,
-                      size_t a_length = 0);
+                      size_t a_length = SIZE_MAX);
 AData::Ptr ReadBuffer(const char *&a_buff, byte a_type, const CSerializationContext &a_context);
 
 inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_context)
 {
     auto l_type = ReadValue<byte>(a_buff);
 
-    if ((l_type & POS_FIX_INT) == POS_FIX_INT)
+    if ((l_type & 0x80) == 0)
     {
         return MakePrim(l_type & ~POS_FIX_INT, a_context);
     }
@@ -557,7 +560,7 @@ inline AData::Ptr ReadString(const char *&a_buff, byte a_type,
                              const CSerializationContext &a_context,
                              size_t a_length)
 {
-    if (a_length == 0)
+    if (a_length == SIZE_MAX)
     {
         switch (a_type)
         {
@@ -578,6 +581,7 @@ inline AData::Ptr ReadString(const char *&a_buff, byte a_type,
     }
 
     string l_val(a_buff, a_buff + a_length);
+    a_buff += a_length;
 
     return MakePrim(move(l_val), a_context);
 }
@@ -616,17 +620,17 @@ inline void WriteStruct(char *&a_buff, const CStructData &a_data)
 {
     if (a_data.size() <= 0xf)
     {
-        WriteValue(a_buff, FIX_MAP | byte(a_data.size()));
+        WriteValue<byte>(a_buff, FIX_MAP | byte(a_data.size()));
     }
     else if (a_data.size() <= 0xffff)
     {
         WriteValue(a_buff, MAP_16);
-        WriteValue(a_buff, uint16_t(a_data.size()));
+        WriteValue<uint16_t>(a_buff, a_data.size());
     }
     else
     {
         WriteValue(a_buff, MAP_32);
-        WriteValue(a_buff, uint32_t(a_data.size()));
+        WriteValue<uint32_t>(a_buff, a_data.size());
     }
 
     for (const CStructData::TProp &l_prop : a_data)
@@ -640,7 +644,7 @@ inline AData::Ptr ReadStruct(const char *&a_buff, byte a_type,
                              const CSerializationContext &a_context,
                              size_t a_length)
 {
-    if (a_length == 0)
+    if (a_length == SIZE_MAX)
     {
         switch (a_type)
         {
@@ -742,17 +746,17 @@ inline void WriteArray(char *&a_buff, const CArrayData &a_data)
 {
     if (a_data.size() <= 0xf)
     {
-        WriteValue(a_buff, FIX_ARRAY | byte(a_data.size()));
+        WriteValue<uint8_t>(a_buff, FIX_ARRAY | byte(a_data.size()));
     }
     else if (a_data.size() <= 0xffff)
     {
         WriteValue(a_buff, ARR_16);
-        WriteValue(a_buff, uint16_t(a_data.size()));
+        WriteValue<uint16_t>(a_buff, a_data.size());
     }
     else
     {
         WriteValue(a_buff, ARR_32);
-        WriteValue(a_buff, uint32_t(a_data.size()));
+        WriteValue<uint32_t>(a_buff, a_data.size());
     }
 
     for (const AData::Ptr &l_data : a_data)
@@ -765,7 +769,7 @@ inline AData::Ptr ReadArray(const char *&a_buff, byte a_type,
                             const CSerializationContext &a_context,
                             size_t a_length)
 {
-    if (a_length == 0)
+    if (a_length == SIZE_MAX)
     {
         switch (a_type)
         {
@@ -827,17 +831,17 @@ void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<T> &a_data)
 {
     if (a_data.size() <= 0xf)
     {
-        WriteValue(a_buff, FIX_ARRAY | byte(a_data.size()));
+        WriteValue<uint8_t>(a_buff, FIX_ARRAY | byte(a_data.size()));
     }
     else if (a_data.size() <= 0xffff)
     {
         WriteValue(a_buff, ARR_16);
-        WriteValue(a_buff, uint16_t(a_data.size()));
+        WriteValue<uint16_t>(a_buff, a_data.size());
     }
     else
     {
         WriteValue(a_buff, ARR_32);
-        WriteValue(a_buff, uint32_t(a_data.size()));
+        WriteValue<uint32_t>(a_buff, a_data.size());
     }
 
     for (const T &l_val : a_data)
@@ -908,6 +912,31 @@ inline size_t CalcBufferSize(const CBufferData &a_data)
     return CalcRawSize(a_data.BufferSize());
 }
 
+inline void WriteBuffer(char *&a_buff, const CBufferData &a_data)
+{
+    if (a_data.BufferSize() <= 0xff)
+    {
+        WriteValue(a_buff, BIN_8);
+        WriteValue<uint8_t>(a_buff, a_data.BufferSize());
+    }
+    else if (a_data.BufferSize() <= 0xffff)
+    {
+        WriteValue(a_buff, BIN_16);
+        WriteValue<uint16_t>(a_buff, a_data.BufferSize());
+    }
+    else if (a_data.BufferSize() <= 0xffffffff)
+    {
+        WriteValue(a_buff, BIN_32);
+        WriteValue<uint32_t>(a_buff, a_data.BufferSize());
+    }
+    else
+    {
+        throw runtime_error("Cannot write a buffer larger than (2^32)-1");
+    }
+
+    WriteRawBytes(a_buff, a_data.GetBuffer().data(), a_data.BufferSize());
+}
+
 inline AData::Ptr ReadBuffer(const char *&a_buff, byte a_type,
                              const CSerializationContext &a_context)
 {
@@ -934,6 +963,8 @@ inline AData::Ptr ReadBuffer(const char *&a_buff, byte a_type,
     a_buff += l_length;
 
     return CBufferData::Ptr(new CBufferData(move(l_buff), a_context));
+}
+
 }
 
 size_t CMsgPackSerializer::CalcSize(const AData &a_data) const

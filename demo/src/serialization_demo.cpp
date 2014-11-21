@@ -211,6 +211,26 @@ int main(int argc, char *argv[])
 
 	assert(dsXml == st && dsXml == dsJson);
 
+	// Play with the MsgPack format. This is a standardized format.
+	// http://msgpack.org/
+	string msgPackSerialized = ser::CMsgPackSerializer().Serialize(st);
+
+	auto dsMsgPack = ser::CMsgPackSerializer().Deserialize<SomeType>(msgPackSerialized);
+
+	assert(dsMsgPack == st);
+
+	// Play with the Axon binary format
+	string axonSerialized = ser::CAxonSerializer().Serialize(st);
+
+	auto dsAxon = ser::CAxonSerializer().Deserialize<SomeType>(axonSerialized);
+
+	assert(dsAxon == st);
+
+	cout << "JSON Format Length: " << jsonSerialized.size() << endl
+	     << "XML Format Length: " << xmlSerialized.size() << endl
+	     << "MsgPack Format Length: " << msgPackSerialized.size() << endl
+	     << "Axon Format Length: " << axonSerialized.size() << endl;
+
 	return EXIT_SUCCESS;
 }
 
