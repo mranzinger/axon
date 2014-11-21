@@ -14,5 +14,6 @@
 #include "format/axon_serializer.h"
 #include "format/json_serializer.h"
 #include "format/xml_serializer.h"
+#include "format/msgpack_serializer.h"
 
 #endif /* MASTER_H_ */
