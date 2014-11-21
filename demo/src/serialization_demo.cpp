@@ -15,6 +15,8 @@
 using namespace std;
 namespace ser = axon::serialization;
 
+bool s_fullTest = false;
+
 class Node
 {
 public:
@@ -24,36 +26,54 @@ public:
 	typedef shared_ptr<Node> Ptr;
 
 	int Value;
+	float Val2;
+	double Val3;
+	bool V4;
 	vector<Ptr> Children;
 
-	Node(int val = 0) : Value(val) { }
-	Node(int val, vector<Ptr> children)
-		: Value(val), Children(move(children)) { }
+	Node() : Value(0), Val2(-5), Val3(10003440599.2343), V4(false) { }
+	Node(int val, float val2, double val3)
+	    : Value(val), Val2(val2), Val3(val3), V4(val % 2 == 1) { }
+	Node(int val, float val2, double val3, vector<Ptr> children)
+		: Value(val), Val2(val2), Val3(val3), V4(val % 2 == 1), Children(move(children)) { }
 	template<typename ...Nodes>
-	Node(int val, Nodes ...children)
-		: Value(val)
+	Node(int val, float val2, double val3, Nodes ...children)
+		: Value(val), Val2(val2), Val3(val3), V4(val % 2 == 1)
 	{
 		AddChildren(move(children)...);
 	}
 
-	static Ptr Create(int val = 0)
+	static Ptr Create(int val, float val2, double val3)
 	{
-		return Ptr(new Node(val));
+		return Ptr(new Node(val, val2, val3));
 	}
-	static Ptr Create(int val, vector<Ptr> children)
+	static Ptr Create(int val, float val2, double val3, vector<Ptr> children)
 	{
-		return Ptr(new Node(val, move(children)));
+		return Ptr(new Node(val, val2, val3, move(children)));
 	}
 	template<typename ...Nodes>
-	static Ptr Create(int val, Nodes ...children)
+	static Ptr Create(int val, float val2, double val3, Nodes ...children)
 	{
-		return Ptr(new Node(val, move(children)...));
+		return Ptr(new Node(val, val2, val3, move(children)...));
 	}
 
 	bool operator==(const Node &other) const
 	{
 		if (Value != other.Value)
 			return false;
+
+		// This is a lazy way to get around the fact that the xml and json
+		// serializers don't necessarily perfectly encode floating point values
+		if (s_fullTest)
+		{
+            if (Val2 != other.Val2)
+                return false;
+            if (Val3 != other.Val3)
+                return false;
+		}
+
+		if (V4 != other.V4)
+            return false;
 
 		if (Children.size() != other.Children.size())
 			return false;
@@ -92,6 +112,9 @@ private:
 void BindStruct(const ser::CStructBinder &binder, Node &node)
 {
 	binder("Value", node.Value)
+	      ("Val2", node.Val2)
+	      ("Val3", node.Val3)
+	      ("V4", node.V4)
 	      ("Children", node.Children);
 }
 
@@ -175,14 +198,14 @@ int main(int argc, char *argv[])
 	SomeType st{
 		"Hello World",
 		{
-			Node::Create(1),
-			Node::Create(2),
-			Node::Create(3,
-					Node::Create(4),
-					Node::Create(5,
-							Node::Create(6)),
-					Node::Create(7)),
-			Node::Create(8)
+			Node::Create(1, -1, 12345.678),
+			Node::Create(2, 22, 2222),
+			Node::Create(3, 123, 456,
+					Node::Create(4, 654.321, 11992200.336644),
+					Node::Create(5, 123, 456.789,
+							Node::Create(6, 7, 8)),
+					Node::Create(7, -500000, -12345664.342354)),
+			Node::Create(8, 21320943, 12432.34254)
 		}
 	};
 
@@ -210,6 +233,8 @@ int main(int argc, char *argv[])
 	auto dsXml = ser::CXmlSerializer().Deserialize<SomeType>(xmlSerialized);
 
 	assert(dsXml == st && dsXml == dsJson);
+
+	s_fullTest = true;
 
 	// Play with the MsgPack format. This is a standardized format.
 	// http://msgpack.org/

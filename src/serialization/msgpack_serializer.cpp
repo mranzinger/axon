@@ -475,22 +475,22 @@ inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_c
     {
         return MakePrim(l_type & ~POS_FIX_INT, a_context);
     }
-    else if ((l_type & NEG_FIX_INT) == NEG_FIX_INT)
+    else if ((l_type & 0xe0) == NEG_FIX_INT)
     {
         int8_t l_val = -int8_t(l_type & ~NEG_FIX_INT);
         return MakePrim(l_val, a_context);
     }
-    else if ((l_type & FIX_STR) == FIX_STR)
+    else if ((l_type & 0xe0) == FIX_STR)
     {
         size_t l_len = l_type & ~FIX_STR;
         return ReadString(a_buff, FIX_STR, a_context, l_len);
     }
-    else if ((l_type & FIX_ARRAY) == FIX_ARRAY)
+    else if ((l_type & 0xf0) == FIX_ARRAY)
     {
         size_t l_len = l_type & ~FIX_ARRAY;
         return ReadArray(a_buff, FIX_ARRAY, a_context, l_len);
     }
-    else if ((l_type & FIX_MAP) == FIX_MAP)
+    else if ((l_type & 0xf0) == FIX_MAP)
     {
         size_t l_len = l_type & ~FIX_MAP;
         return ReadStruct(a_buff, FIX_MAP, a_context, l_len);

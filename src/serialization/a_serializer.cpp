@@ -53,7 +53,7 @@ AData::Ptr ASerializer::DeserializeDataFromFile(const std::string &a_fileName) c
 
 	std::string l_str(len, '\0');
 
-	fs.read(const_cast<char*>(l_str.data()), len);
+	fs.read(&l_str[0], len);
 
 	return DeserializeData(l_str.data(), l_str.data() + len);
 }
