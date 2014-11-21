@@ -101,7 +101,8 @@ private:
 	}
 
 	template<typename DT>
-	auto TryGetField(DT *&a_vp, const char *a_name) const -> decltype(a_vp->GetValue())
+	auto TryGetField(DT *&a_vp, const char *a_name) const
+	    -> decltype(((const DT *)a_vp)->GetValue())
 	{
 		typedef typename std::remove_const<
 			typename std::remove_reference<decltype(a_vp->GetValue())>::type>::type

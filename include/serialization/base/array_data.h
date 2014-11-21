@@ -27,6 +27,9 @@ public:
 	CArrayData();
 	CArrayData(CSerializationContext a_context);
 
+	static Ptr Create();
+	static Ptr Create(CSerializationContext a_context);
+
 	void Add(AData::Ptr a_val);
 
     void Erase(size_t idx);

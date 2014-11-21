@@ -19,6 +19,16 @@ CArrayData::CArrayData()
 CArrayData::CArrayData(CSerializationContext a_context)
         : AData(DataType::Array, move(a_context)) { }
 
+CArrayData::Ptr CArrayData::Create()
+{
+    return Ptr(new CArrayData());
+}
+
+CArrayData::Ptr CArrayData::Create(CSerializationContext a_context)
+{
+    return Ptr(new CArrayData(move(a_context)));
+}
+
 void CArrayData::Add(AData::Ptr a_val)
 {
     m_children.push_back(move(a_val));
@@ -57,5 +67,7 @@ string CArrayData::ToJsonString(size_t a_numSpaces) const
     return oss.str();
 }
 
-} }
+}
+}
+
 

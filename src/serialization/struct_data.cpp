@@ -23,6 +23,16 @@ CStructData::CStructData(CSerializationContext a_context)
 {
 }
 
+CStructData::Ptr CStructData::Create()
+{
+    return Ptr(new CStructData());
+}
+
+CStructData::Ptr CStructData::Create(CSerializationContext a_context)
+{
+    return Ptr(new CStructData(move(a_context)));
+}
+
 void CStructData::Add(string a_name, AData::Ptr a_val)
 {
     m_props.emplace_back(move(a_name), move(a_val));
@@ -93,4 +103,7 @@ string CStructData::ToJsonString(size_t a_numSpaces) const
     return oss.str();
 }
 
-} }
+}
+}
+
+

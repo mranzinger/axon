@@ -111,6 +111,7 @@ public:
 
     }
 
+	T &GetValue() { return m_value; }
 	const T &GetValue() const { return m_value; }
 
 	void SetValue(T a_val)
