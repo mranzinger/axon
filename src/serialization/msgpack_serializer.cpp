@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <type_traits>
 #include <assert.h>
+#include <endian.h>
 
 using namespace std;
 
@@ -67,30 +68,85 @@ struct num_helper_t<NumType, true>
     : int_helper_t<NumType, is_signed<NumType>::value>
 {};
 
+const bool IS_BIG_ENDIAN = BYTE_ORDER == BIG_ENDIAN;
+
+template<typename T, bool IsBigEndian>
+struct value_writer_t;
+
 template<typename T>
-void WriteValueImpl(char *&a_buff, const typename enable_if<is_trivial<T>::value, T>::type &a_val)
+struct value_writer_t<T, true>
 {
-    memcpy(a_buff, &a_val, sizeof(T));
-    a_buff += sizeof(T);
-}
+    static_assert(is_trivial<T>::value, "The value to be written must be trivial.");
+
+    static void WriteValue(char *&a_buff, const T &a_val)
+    {
+        memcpy(a_buff, &a_val, sizeof(T));
+        a_buff += sizeof(T);
+    }
+    static void ReadValue(const char *&a_buff, T &a_val)
+    {
+        memcpy(&a_val, a_buff, sizeof(a_val));
+        a_buff += sizeof(a_val);
+    }
+};
+
+template<typename T>
+struct value_writer_t<T, false>
+{
+    static_assert(is_trivial<T>::value, "The value to be written must be trivial.");
+
+    template<size_t Size>
+    struct re
+    {
+        static void WriteValue(char *&a_buff, const T &a_val)
+        {
+            auto l_buff = (const char *)&a_val;
+
+            Go(l_buff, a_buff);
+            a_buff += sizeof(T);
+        }
+        static void ReadValue(const char *&a_buff, T &a_val)
+        {
+            auto l_buff = (char *)&a_val;
+
+            Go(a_buff, l_buff);
+            a_buff += sizeof(T);
+        }
+
+        static void Go(const char *a_src, char *a_dest)
+        {
+            #pragma unroll
+            for (size_t i = 0; i < Size; ++i)
+            {
+                a_dest[i] = a_src[Size - i - 1];
+            }
+        }
+    };
+
+    static void WriteValue(char *&a_buff, const T &a_val)
+    {
+        re<sizeof(T)>::WriteValue(a_buff, a_val);
+    }
+    static void ReadValue(const char *&a_buff, T &a_val)
+    {
+        re<sizeof(T)>::ReadValue(a_buff, a_val);
+    }
+};
+
+template<typename T>
+struct value_writer
+    : value_writer_t<T, IS_BIG_ENDIAN> { };
 
 template<typename T>
 void WriteValue(char *&a_buff, const T &a_val)
 {
-    WriteValueImpl<T>(a_buff, a_val);
-}
-
-template<typename T>
-void ReadValueImpl(const char *&a_buff, typename enable_if<is_trivial<T>::value, T>::type &a_val)
-{
-    memcpy(&a_val, a_buff, sizeof(a_val));
-    a_buff += sizeof(a_val);
+    value_writer<T>::WriteValue(a_buff, a_val);
 }
 
 template<typename T>
 void ReadValue(const char *&a_buff, T &a_val)
 {
-    ReadValueImpl<T>(a_buff, a_val);
+    value_writer<T>::ReadValue(a_buff, a_val);
 }
 
 template<typename T>

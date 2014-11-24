@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 					Node::Create(5, 123, 456.789,
 							Node::Create(6, 7, 8)),
 					Node::Create(7, -500000, -12345664.342354)),
-			Node::Create(8, 21320943, 12432.34254)
+			Node::Create(123456789, 21320943, 12432.34254)
 		}
 	};
 
