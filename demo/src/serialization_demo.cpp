@@ -131,18 +131,6 @@ public:
 		m_nodeCt = m_nodes.size();
 	}
 
-	void Write(const ser::CStructWriter &writer) const
-	{
-		writer("Name", m_name)
-			  ("Nodes", m_nodes);
-	}
-	void Read(const ser::CStructReader &reader)
-	{
-		reader("Name", m_name)
-			  ("Nodes", m_nodes);
-		m_nodeCt = m_nodes.size();
-	}
-
 	const string &GetName() const { return m_name; }
 	void SetName(string a_name) { m_name = move(a_name); }
 
@@ -200,7 +188,7 @@ int main(int argc, char *argv[])
 		{
 			Node::Create(1, -1, 12345.678),
 			Node::Create(2, 22, 2222),
-			Node::Create(3, 123, 456,
+			Node::Create(-1, 123, 456,
 					Node::Create(4, 654.321, 11992200.336644),
 					Node::Create(5, 123, 456.789,
 							Node::Create(6, 7, 8)),

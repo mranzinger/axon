@@ -228,7 +228,7 @@ struct int_helper_t<IntType, true>
 
             if (v2 <= IntType(0x1f))
             {
-                WriteValue<uint8_t>(a_buff, NEG_FIX_INT | byte(v2));
+                WriteValue<uint8_t>(a_buff, NEG_FIX_INT | (int8_t(val) & 0x1f));
             }
             else if (v2 <= IntType(0x7f))
             {
@@ -533,7 +533,7 @@ inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_c
     }
     else if ((l_type & 0xe0) == NEG_FIX_INT)
     {
-        int8_t l_val = -int8_t(l_type & ~NEG_FIX_INT);
+        auto l_val = reinterpret_cast<int8_t&>(l_type);
         return MakePrim(l_val, a_context);
     }
     else if ((l_type & 0xe0) == FIX_STR)
