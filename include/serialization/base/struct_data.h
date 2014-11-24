@@ -19,10 +19,11 @@ namespace axon { namespace serialization {
 class AXON_SERIALIZE_API CStructData
 	: public AData
 {
-private:
+public:
 	typedef std::pair<std::string, AData::Ptr> TProp;
 	typedef std::vector<TProp> TVec;
 
+private:
 	TVec m_props;
 
 public:
@@ -30,6 +31,9 @@ public:
 
 	CStructData();
 	CStructData(CSerializationContext a_context);
+
+	static Ptr Create();
+	static Ptr Create(CSerializationContext a_context);
 
 	void Add(std::string a_name, AData::Ptr a_val);
 

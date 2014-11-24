@@ -33,6 +33,8 @@ struct MasterContext
 	unordered_map<size_t, string> ReverseMap;
 };
 
+namespace {
+
 size_t p_CalcSize(const AData &a_data, MasterContext &a_mc, DataType a_knownType = DataType::Unknown);
 size_t p_CalcHeaderSize(const AData &a_data, MasterContext &a_mc);
 
@@ -41,7 +43,7 @@ void WriteData(char *&a_buff, const AData &a_data, const MasterContext &a_mc, Da
 AData::Ptr ReadData(const char *&a_buff, const MasterContext &a_mc, const CSerializationContext &a_context, DataType a_knownType = DataType::Unknown);
 void ReadHeader(const char *&a_buff, MasterContext &a_mc);
 
-size_t CalcEncodeSize(size_t a_size)
+inline size_t CalcEncodeSize(size_t a_size)
 {
 	size_t l_ret = 1;
 
@@ -50,7 +52,7 @@ size_t CalcEncodeSize(size_t a_size)
 	return l_ret;
 }
 
-void EncodeSize(char *&a_buffer, size_t a_size)
+inline void EncodeSize(char *&a_buffer, size_t a_size)
 {
 	for (; a_size > 0x7f; ++a_buffer, a_size >>= 7)
 	{
@@ -60,7 +62,7 @@ void EncodeSize(char *&a_buffer, size_t a_size)
 	*a_buffer++ = char(a_size);
 }
 
-void DecodeSize(const char *&a_buffer, size_t &a_size)
+inline void DecodeSize(const char *&a_buffer, size_t &a_size)
 {
 	a_size = 0;
 
@@ -73,7 +75,7 @@ void DecodeSize(const char *&a_buffer, size_t &a_size)
 	a_size |= size_t(*a_buffer++) << shift;
 }
 
-size_t DecodeSize(const char *&a_buff)
+inline size_t DecodeSize(const char *&a_buff)
 {
 	size_t l_ret;
 	DecodeSize(a_buff, l_ret);
@@ -86,7 +88,7 @@ size_t CalcValueSizeImpl(const typename enable_if<is_trivial<T>::value, T>::type
 	return sizeof(T);
 }
 
-size_t CalcValueSize(const string &a_val)
+inline size_t CalcValueSize(const string &a_val)
 {
 	return CalcEncodeSize(a_val.size()) + a_val.size();
 }
@@ -110,7 +112,7 @@ void WriteValue(char *&a_buff, const T &a_val)
 	WriteValueImpl<T>(a_buff, a_val);
 }
 
-void WriteValue(char *&a_buff, const string &a_str)
+inline void WriteValue(char *&a_buff, const string &a_str)
 {
 	EncodeSize(a_buff, a_str.size()); // Write the size of the string
 
@@ -131,7 +133,7 @@ void ReadValue(const char *&a_buff, T &a_val)
 	ReadValueImpl<T>(a_buff, a_val);
 }
 
-void ReadValue(const char *&a_buff, string &a_str)
+inline void ReadValue(const char *&a_buff, string &a_str)
 {
 	size_t l_size;
 	DecodeSize(a_buff, l_size);
@@ -149,6 +151,8 @@ T ReadValue(const char *&a_buff)
 	T l_ret;
 	ReadValue(a_buff, l_ret);
 	return move(l_ret);
+}
+
 }
 
 size_t CAxonSerializer::CalcSize(const AData& a_data) const
@@ -205,7 +209,7 @@ std::string CAxonSerializer::SerializeData(const AData& a_data) const
 
 	std::string l_ret(l_writeSize, '\0');
 
-	if (SerializeInto(a_data, const_cast<char*>(l_ret.data()), l_writeSize)
+	if (SerializeInto(a_data, &l_ret[0], l_writeSize)
 			!= l_writeSize)
 	{
 		throw runtime_error("Internal Error. Did not serialize properly.");
@@ -231,7 +235,9 @@ size_t CAxonSerializer::p_EstablishSize(const AData& a_data) const
 	}
 }
 
-size_t p_CalcBufferSize(const CBufferData &a_data)
+namespace {
+
+inline size_t CalcBufferSize(const CBufferData &a_data)
 {
 	size_t l_size = 0;
 
@@ -243,7 +249,7 @@ size_t p_CalcBufferSize(const CBufferData &a_data)
 	return l_size;
 }
 
-void WriteBuffer(char *&a_buff, const CBufferData &a_data)
+inline void WriteBuffer(char *&a_buff, const CBufferData &a_data)
 {
 	EncodeSize(a_buff, 0); // Size of compressed buffer
 	EncodeSize(a_buff, a_data.BufferSize());
@@ -252,7 +258,7 @@ void WriteBuffer(char *&a_buff, const CBufferData &a_data)
 	a_buff += a_data.BufferSize();
 }
 
-AData::Ptr ReadBuffer(const char *&a_buff, const CSerializationContext &a_context)
+inline AData::Ptr ReadBuffer(const char *&a_buff, const CSerializationContext &a_context)
 {
 	size_t l_compSize = DecodeSize(a_buff);
 
@@ -268,7 +274,7 @@ AData::Ptr ReadBuffer(const char *&a_buff, const CSerializationContext &a_contex
 	return CBufferData::Ptr(new CBufferData(move(l_buff), a_context));
 }
 
-size_t p_CalcStructSize(const CStructData &a_data, MasterContext &a_mc)
+inline size_t p_CalcStructSize(const CStructData &a_data, MasterContext &a_mc)
 {
 	size_t l_size = 0;
 
@@ -291,7 +297,7 @@ size_t p_CalcStructSize(const CStructData &a_data, MasterContext &a_mc)
 	return l_size;
 }
 
-void WriteStruct(char *&a_buff, const CStructData &a_data, const MasterContext &a_mc)
+inline void WriteStruct(char *&a_buff, const CStructData &a_data, const MasterContext &a_mc)
 {
 	WriteValue(a_buff, byte(0)); // Write Mode (Plain)
 	EncodeSize(a_buff, a_data.size());
@@ -303,7 +309,7 @@ void WriteStruct(char *&a_buff, const CStructData &a_data, const MasterContext &
 	}
 }
 
-AData::Ptr ReadStruct(const char *&a_buff, const MasterContext &a_mc, const CSerializationContext &a_context)
+inline AData::Ptr ReadStruct(const char *&a_buff, const MasterContext &a_mc, const CSerializationContext &a_context)
 {
 	if (0 != ReadValue<byte>(a_buff))
 		throw runtime_error("Unsupported struct format.");
@@ -329,7 +335,7 @@ AData::Ptr ReadStruct(const char *&a_buff, const MasterContext &a_mc, const CSer
 	return move(l_ret);
 }
 
-size_t p_CalcArraySize(const CArrayData &a_data, MasterContext &a_mc)
+inline size_t p_CalcArraySize(const CArrayData &a_data, MasterContext &a_mc)
 {
 	size_t l_size = 0;
 
@@ -344,7 +350,7 @@ size_t p_CalcArraySize(const CArrayData &a_data, MasterContext &a_mc)
 	return l_size;
 }
 
-void WriteArray(char *&a_buff, const CArrayData &a_data, const MasterContext &a_mc)
+inline void WriteArray(char *&a_buff, const CArrayData &a_data, const MasterContext &a_mc)
 {
 	WriteValue(a_buff, byte(0)); // Write Mode (Plain)
 	EncodeSize(a_buff, a_data.size());
@@ -355,7 +361,8 @@ void WriteArray(char *&a_buff, const CArrayData &a_data, const MasterContext &a_
 	}
 }
 
-AData::Ptr ReadArray(const char *&a_buff, const MasterContext &a_mc, const CSerializationContext &a_context)
+inline AData::Ptr ReadArray(const char *&a_buff, const MasterContext &a_mc,
+                            const CSerializationContext &a_context)
 {
 	if (0 != ReadValue<byte>(a_buff))
 		throw runtime_error("Invalid array format.");
@@ -382,7 +389,7 @@ size_t p_CalcPrimArraySizeImpl(const CPrimArrayData<T> &a_data)
 	return l_size;
 }
 
-size_t p_CalcPrimArraySizeImpl(const CPrimArrayData<string> &a_data)
+inline size_t p_CalcPrimArraySizeImpl(const CPrimArrayData<string> &a_data)
 {
 	size_t l_size = 0;
 
@@ -394,7 +401,7 @@ size_t p_CalcPrimArraySizeImpl(const CPrimArrayData<string> &a_data)
 	return l_size;
 }
 
-size_t p_CalcPrimArraySize(const APrimArrayDataBase &a_data)
+inline size_t CalcPrimArraySize(const APrimArrayDataBase &a_data)
 {
 #define CALC_SIZE(name, type) \
 	case DataType::name: \
@@ -442,7 +449,7 @@ void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<T> &a_data)
 
 // Need to specialize this because of the boneheaded decision to make vector<bool>
 // a bitset
-void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<bool> &a_data)
+inline void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<bool> &a_data)
 {
 	for (bool l_b : a_data)
 	{
@@ -450,7 +457,7 @@ void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<bool> &a_data)
 	}
 }
 
-void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<string> &a_data)
+inline void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<string> &a_data)
 {
 	for (const string &l_val : a_data)
 	{
@@ -458,7 +465,7 @@ void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<string> &a_data)
 	}
 }
 
-void WritePrimArray(char *&a_buff, const APrimArrayDataBase &a_data)
+inline void WritePrimArray(char *&a_buff, const APrimArrayDataBase &a_data)
 {
 #define WRITE_PRIM(name, type) \
 	case DataType::name: \
@@ -503,7 +510,7 @@ void ReadPrimArrayImpl2(const char *&a_buff, CPrimArrayData<T> &a_data, size_t a
 	a_buff = reinterpret_cast<const char *>(l_end);
 }
 
-void ReadPrimArrayImpl2(const char *&a_buff, CPrimArrayData<string> &a_data, size_t a_size)
+inline void ReadPrimArrayImpl2(const char *&a_buff, CPrimArrayData<string> &a_data, size_t a_size)
 {
 	for (size_t i = 0; i < a_size; ++i)
 	{
@@ -522,7 +529,7 @@ AData::Ptr ReadPrimArrayImpl(const char *&a_buff, size_t a_size, const CSerializ
 	return move(l_ret);
 }
 
-AData::Ptr ReadPrimArray(const char *&a_buff, const CSerializationContext &a_context)
+inline AData::Ptr ReadPrimArray(const char *&a_buff, const CSerializationContext &a_context)
 {
 	if (0 != ReadValue<byte>(a_buff))
 		throw runtime_error("Unsupported primitive array write mode.");
@@ -558,7 +565,7 @@ AData::Ptr ReadPrimArray(const char *&a_buff, const CSerializationContext &a_con
 #undef READ_PRIM
 }
 
-size_t p_CalcSize(const AData& a_data, MasterContext& a_mc, DataType a_knownType)
+inline size_t p_CalcSize(const AData& a_data, MasterContext& a_mc, DataType a_knownType)
 {
 #define PRIM_SIZE(name, type) \
 	case DataType::name: \
@@ -602,11 +609,11 @@ size_t p_CalcSize(const AData& a_data, MasterContext& a_mc, DataType a_knownType
 		break;
 
 	case DataType::Buffer:
-		l_size += p_CalcBufferSize(static_cast<const CBufferData &>(a_data));
+		l_size += CalcBufferSize(static_cast<const CBufferData &>(a_data));
 		break;
 
 	case DataType::PrimArray:
-		l_size += p_CalcPrimArraySize(static_cast<const APrimArrayDataBase &>(a_data));
+		l_size += CalcPrimArraySize(static_cast<const APrimArrayDataBase &>(a_data));
 		break;
 	}
 
@@ -615,7 +622,7 @@ size_t p_CalcSize(const AData& a_data, MasterContext& a_mc, DataType a_knownType
 #undef PRIM_SIZE
 }
 
-void WriteData(char*& a_buff, const AData& a_data, const MasterContext& a_mc, DataType a_knownType)
+inline void WriteData(char*& a_buff, const AData& a_data, const MasterContext& a_mc, DataType a_knownType)
 {
 #define WRITE_PRIM(name, type) \
 	case DataType::name: \
@@ -630,8 +637,8 @@ void WriteData(char*& a_buff, const AData& a_data, const MasterContext& a_mc, Da
 
 	switch (a_knownType)
 	{
-	WRITE_PRIM(SByte, byte);
-	WRITE_PRIM(UByte, byte);
+	WRITE_PRIM(SByte, int8_t);
+	WRITE_PRIM(UByte, uint8_t);
 	WRITE_PRIM(Short, short);
 	WRITE_PRIM(UShort, ushort);
 	WRITE_PRIM(Int, int);
@@ -670,7 +677,7 @@ void WriteData(char*& a_buff, const AData& a_data, const MasterContext& a_mc, Da
 #undef WRITE_PRIM
 }
 
-AData::Ptr ReadData(const char*& a_buff, const MasterContext& a_mc, const CSerializationContext &a_context, DataType a_knownType)
+inline AData::Ptr ReadData(const char*& a_buff, const MasterContext& a_mc, const CSerializationContext &a_context, DataType a_knownType)
 {
 #define READ_PRIM(name, type) \
 	case DataType::name: \
@@ -717,7 +724,7 @@ AData::Ptr ReadData(const char*& a_buff, const MasterContext& a_mc, const CSeria
 #undef READ_PRIM
 }
 
-size_t p_CalcHeaderSize(const AData& a_data, MasterContext& a_mc)
+inline size_t p_CalcHeaderSize(const AData& a_data, MasterContext& a_mc)
 {
 	size_t l_size = 0;
 
@@ -735,7 +742,7 @@ size_t p_CalcHeaderSize(const AData& a_data, MasterContext& a_mc)
 	return l_size;
 }
 
-void WriteHeader(char*& a_buff, const MasterContext& a_mc)
+inline void WriteHeader(char*& a_buff, const MasterContext& a_mc)
 {
 	typedef pair<size_t, const string*> record;
 
@@ -769,7 +776,7 @@ void WriteHeader(char*& a_buff, const MasterContext& a_mc)
 	}
 }
 
-void ReadHeader(const char*& a_buff, MasterContext& a_mc)
+inline void ReadHeader(const char*& a_buff, MasterContext& a_mc)
 {
 	if (ReadValue<remove_const<decltype(MAGIC_NUMBER)>::type>(a_buff) != MAGIC_NUMBER)
 		throw runtime_error("The specified binary stream is not valid.");
@@ -788,7 +795,7 @@ void ReadHeader(const char*& a_buff, MasterContext& a_mc)
 	}
 }
 
-
+}
 
 
 
