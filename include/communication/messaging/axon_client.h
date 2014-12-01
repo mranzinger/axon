@@ -22,6 +22,8 @@ class AXON_COMMUNICATE_API CAxonClient
 	: public AContractHost,
 	  public virtual IAxonClient
 {
+    class WaitHandle;
+
 private:
 	IDataConnection::Ptr m_connection;
 	IProtocol::Ptr m_protocol;
@@ -51,9 +53,11 @@ public:
 
     std::string ConnectionString() const override;
 
-	virtual CMessage::Ptr Send(const CMessage &a_message) override;
-	virtual CMessage::Ptr Send(const CMessage &a_message, uint32_t a_timeout) override;
-	virtual void SendNonBlocking(const CMessage &a_message) override;
+	virtual CMessage::Ptr Send(const CMessage::Ptr &a_message) override;
+	virtual CMessage::Ptr Send(const CMessage::Ptr &a_message, uint32_t a_timeout) override;
+	virtual IMessageWaitHandle::Ptr SendAsync(const CMessage::Ptr &a_message) override;
+    virtual IMessageWaitHandle::Ptr SendAsync(const CMessage::Ptr &a_message, uint32_t a_timeout) override;
+	virtual void SendNonBlocking(const CMessage::Ptr &a_message) override;
 
 protected:
 	virtual bool TryHandleWithServer(const CMessage &a_msg, CMessage::Ptr &a_out) const;

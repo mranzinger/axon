@@ -37,6 +37,7 @@ private:
 	std::string m_action;
 
 public:
+	typedef Ret return_type;
 	typedef std::tuple<Args...> tuple_type;
 	typedef std::function<Ret (Args...)> function_type;
 
