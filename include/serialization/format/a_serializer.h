@@ -41,11 +41,19 @@ public:
 	}
 
 	template<typename T>
+	void Serialize(char *a_buff, size_t a_buffSize, const T &a_val) const
+	{
+	    auto l_data = axon::serialization::Serialize(a_val);
+
+	    SerializeInto(*l_data, a_buff, a_buffSize);
+	}
+
+	template<typename T>
 	T Deserialize(const std::string &a_buf) const
 	{
 		T l_ret;
 		Deserialize(a_buf, l_ret);
-		return l_ret;
+		return std::move(l_ret);
 	}
 	template<typename T>
 	void Deserialize(const std::string &a_buf, T &a_val) const
@@ -61,6 +69,22 @@ public:
 		auto l_data = DeserializeDataFromFile(a_fileName);
 
 		axon::serialization::Deserialize(*l_data, a_val);
+	}
+
+	template<typename T>
+	void Deserialize(const char *a_buff, const char *a_endBuf, T &a_val) const
+	{
+	    auto l_data = DeserializeData(a_buff, a_endBuf);
+
+	    axon::serialization::Deserialize(*l_data, a_val);
+	}
+
+	template<typename T>
+	T Deserialize(const char *a_buff, const char *a_endBuf) const
+	{
+	    T l_ret;
+	    Deserialize(a_buff, a_endBuf, l_ret);
+	    return std::move(l_ret);
 	}
 
 	/*

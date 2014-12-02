@@ -8,6 +8,7 @@
 #include "communication/timeout_exception.h"
 
 #include <functional>
+#include <assert.h>
 
 using namespace std;
 
@@ -15,13 +16,42 @@ namespace axon { namespace communication {
 
 struct CMessageSocket
 {
-	CMessageSocket(const CMessage &a_outboundMessage)
-		: OutboundMessage(a_outboundMessage)
+	CMessageSocket(CMessage::Ptr a_outboundMessage)
+		: OutboundMessage(move(a_outboundMessage))
 	{
 	}
 
-	const CMessage &OutboundMessage;
+	CMessage::Ptr OutboundMessage;
 	CMessage::Ptr IncomingMessage;
+};
+
+class CAxonClient::WaitHandle
+    : public IMessageWaitHandle
+{
+public:
+    typedef unique_ptr<WaitHandle> Ptr;
+
+    WaitHandle(CAxonClient &a_client, CMessage::Ptr a_message, uint32_t a_timeout)
+        : m_client(a_client), m_socket(move(a_message)), m_waited(false), m_timeout(a_timeout)
+    {
+        m_start = chrono::steady_clock::now();
+    }
+    ~WaitHandle()
+    {
+        p_RemoveFromSocketList(true);
+    }
+
+    virtual void Wait() override;
+    virtual CMessage::Ptr GetMessage() override;
+
+    CAxonClient &m_client;
+    CMessageSocket m_socket;
+    bool m_waited;
+    chrono::steady_clock::time_point m_start;
+    uint32_t m_timeout;
+
+private:
+    void p_RemoveFromSocketList(bool a_getLock);
 };
 
 CAxonClient::CAxonClient()
@@ -134,73 +164,132 @@ string CAxonClient::ConnectionString() const
     return m_connection->ConnectionString();
 }
 
-CMessage::Ptr CAxonClient::Send(const CMessage& a_message)
+CMessage::Ptr CAxonClient::Send(const CMessage::Ptr &a_message)
 {
 
 	return Send(a_message, 0);
 }
 
-CMessage::Ptr CAxonClient::Send(const CMessage &a_message, uint32_t a_timeout)
+CMessage::Ptr CAxonClient::Send(const CMessage::Ptr &a_message, uint32_t a_timeout)
 {
-	if (!m_connection || !m_connection->IsOpen())
-		throw runtime_error("Cannot send data over a dead connection.");
-	// Default timeout is 1 minute
-	if (a_timeout == 0)
-		a_timeout = 60000;
+	IMessageWaitHandle::Ptr l_waitHandle = SendAsync(a_message, a_timeout);
 
-	p_Send(a_message);
-
-	auto l_start = chrono::steady_clock::now();
-
-	auto l_durLeft = chrono::milliseconds(a_timeout);
-
-	CMessageSocket l_socket(a_message);
-
-	unique_lock<mutex> l_waitLock(m_pendingLock);
-
-	// Add the socket to the map of messages waiting to be handled
-	m_pendingList.push_back(&l_socket);
-
-	while (!l_socket.IncomingMessage)
-	{
-		cv_status l_status = cv_status::no_timeout;
-
-		if (a_timeout)
-			l_status = m_newMessageEvent.wait_for(l_waitLock, l_durLeft);
-		else
-			m_newMessageEvent.wait(l_waitLock);
-
-		l_durLeft -= chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - l_start);
-
-		if (l_socket.IncomingMessage
-				|| l_status == cv_status::timeout
-				|| l_durLeft < chrono::milliseconds(0))
-		{
-			auto iter = find(m_pendingList.begin(), m_pendingList.end(), &l_socket);
-            
-            if (iter != m_pendingList.end())
-                m_pendingList.erase(iter);
-            else
-                throw runtime_error("The completed socket wasn't in the list of pending communications."
-                                    " Not even sure this can happen... but if it did... bummer.");
-
-			if (!l_socket.IncomingMessage)
-			{
-				throw CTimeoutException(a_timeout);
-			}
-		}
-	}
-
-	return move(l_socket.IncomingMessage);
+	return l_waitHandle->GetMessage();
 }
 
-void CAxonClient::SendNonBlocking(const CMessage& a_message)
+IMessageWaitHandle::Ptr CAxonClient::SendAsync(const CMessage::Ptr& a_message)
 {
-	// Hacky, but we need to flag the message as one way so that
-	// a response doesn't get generated
-	const_cast<CMessage&>(a_message).SetOneWay(true);
+    return SendAsync(a_message, 0);
+}
 
-	p_Send(a_message);
+IMessageWaitHandle::Ptr CAxonClient::SendAsync(const CMessage::Ptr& a_message, uint32_t a_timeout)
+{
+    if (!m_connection || !m_connection->IsOpen())
+        throw runtime_error("Cannot send data over a dead connection.");
+    // Default timeout is 1 minute
+    if (a_timeout == 0)
+        a_timeout = 60000;
+
+    WaitHandle::Ptr l_waitHandle(new WaitHandle(*this, a_message, a_timeout));
+
+    // Add the socket to the map of messages waiting to be handled
+    {
+        lock_guard<mutex> l_lock(m_pendingLock);
+
+        m_pendingList.push_back(&l_waitHandle->m_socket);
+    }
+
+    p_Send(*a_message);
+
+    return move(l_waitHandle);
+}
+
+//--------------------------------------------------------------
+// Wait Handle Implementation
+//--------------------------------------------------------------
+void CAxonClient::WaitHandle::Wait()
+{
+    if (m_waited)
+        return;
+
+    auto l_durLeft = chrono::milliseconds(m_timeout) -
+            chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - m_start);
+
+    unique_lock<mutex> l_waitLock(m_client.m_pendingLock);
+
+    if (m_socket.IncomingMessage)
+    {
+        p_RemoveFromSocketList(false);
+        m_waited = true;
+        return;
+    }
+
+    if (l_durLeft < chrono::milliseconds(0))
+        throw CTimeoutException(m_timeout);
+
+    while (!m_socket.IncomingMessage)
+    {
+        cv_status l_status = m_client.m_newMessageEvent.wait_for(l_waitLock, l_durLeft);
+
+        l_durLeft = chrono::milliseconds(m_timeout) -
+            chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - m_start);
+
+        if (m_socket.IncomingMessage
+                || l_status == cv_status::timeout
+                || l_durLeft < chrono::milliseconds(0))
+        {
+            // Don't need to acquire the lock because we already have it
+            p_RemoveFromSocketList(false);
+
+            if (!m_socket.IncomingMessage)
+            {
+                throw CTimeoutException(m_timeout);
+            }
+        }
+    }
+
+    assert(m_socket.IncomingMessage);
+    m_socket.IncomingMessage->FaultCheck();
+
+    m_waited = true;
+}
+
+CMessage::Ptr CAxonClient::WaitHandle::GetMessage()
+{
+    Wait();
+
+    return m_socket.IncomingMessage;
+}
+
+void CAxonClient::WaitHandle::p_RemoveFromSocketList(bool a_getLock)
+{
+    try
+    {
+        if (a_getLock)
+            m_client.m_pendingLock.lock();
+
+        auto iter = find(m_client.m_pendingList.begin(), m_client.m_pendingList.end(), &m_socket);
+
+        if (iter != m_client.m_pendingList.end())
+            m_client.m_pendingList.erase(iter);
+
+        if (a_getLock)
+            m_client.m_pendingLock.unlock();
+    }
+    catch (...)
+    {
+        if (a_getLock)
+            m_client.m_pendingLock.unlock();
+        throw;
+    }
+}
+//--------------------------------------------------------------
+
+void CAxonClient::SendNonBlocking(const CMessage::Ptr &a_message)
+{
+	a_message->SetOneWay(true);
+
+	p_Send(*a_message);
 }
 
 void CAxonClient::p_Send(const CMessage& a_message)
@@ -239,7 +328,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 		auto iter = find_if(m_pendingList.begin(), m_pendingList.end(),
 				[&l_reqId] (CMessageSocket *l_sock)
 				{
-					return l_reqId == l_sock->OutboundMessage.Id();
+					return l_reqId == l_sock->OutboundMessage->Id();
 				});
 
 		// This message is a result of an outbound request, so let
@@ -266,7 +355,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 		// There was a handler for this message, so now
 		// send it back out to the caller
 		if (!a_message->IsOneWay())
-			SendNonBlocking(*l_response);
+			SendNonBlocking(l_response);
 		l_handled = true;
 	}
 
@@ -276,7 +365,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 	if (TryHandleWithServer(*a_message, l_response))
 	{
 		if (!a_message->IsOneWay())
-			SendNonBlocking(*l_response);
+			SendNonBlocking(l_response);
 		l_handled = true;
 	}
 
@@ -288,7 +377,7 @@ void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 	{
 		l_response = make_shared<CMessage>(*a_message,
 				CFaultException("The action '" + a_message->GetAction() + "' has no supported handlers."));
-		SendNonBlocking(*l_response);
+		SendNonBlocking(l_response);
 	}
 	else
 	{
@@ -313,6 +402,8 @@ bool CAxonClient::TryHandleWithServer(const CMessage& a_msg, CMessage::Ptr& a_ou
 	// Derived instances need to override this
 	return false;
 }
+
+
 
 }
 }
