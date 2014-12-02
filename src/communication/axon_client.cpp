@@ -8,6 +8,7 @@
 #include "communication/timeout_exception.h"
 
 #include <functional>
+#include <assert.h>
 
 using namespace std;
 
@@ -46,7 +47,6 @@ public:
     CAxonClient &m_client;
     CMessageSocket m_socket;
     bool m_waited;
-    CMessage::Ptr m_message;
     chrono::steady_clock::time_point m_start;
     uint32_t m_timeout;
 
@@ -248,6 +248,9 @@ void CAxonClient::WaitHandle::Wait()
         }
     }
 
+    assert(m_socket.IncomingMessage);
+    m_socket.IncomingMessage->FaultCheck();
+
     m_waited = true;
 }
 
@@ -255,7 +258,7 @@ CMessage::Ptr CAxonClient::WaitHandle::GetMessage()
 {
     Wait();
 
-    return m_message;
+    return m_socket.IncomingMessage;
 }
 
 void CAxonClient::WaitHandle::p_RemoveFromSocketList(bool a_getLock)
