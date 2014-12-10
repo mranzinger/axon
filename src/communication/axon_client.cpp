@@ -142,6 +142,12 @@ void CAxonClient::Connect(IDataConnection::Ptr a_connection)
 	}
 }
 
+void CAxonClient::Close()
+{
+    if (m_connection)
+        m_connection->Close();
+}
+
 void CAxonClient::SetDefaultProtocol()
 {
 	SetProtocol(GetDefaultProtocol());
@@ -394,7 +400,23 @@ void CAxonClient::p_OnDataReceived(CDataBuffer a_buffer)
 	// the protocol so that a message can be reconstructed from it.
 	// The data connection owns the buffer, so a copy must be made
 
-	m_protocol->Process(move(a_buffer));
+    try
+    {
+        m_protocol->Process(move(a_buffer));
+    }
+    catch (exception &ex)
+    {
+        HandleProtocolError(ex);
+    }
+}
+
+void CAxonClient::HandleProtocolError(exception& ex)
+{
+    // Not actually sure what should be done here...
+    // probably the best thing to do is to just shut down the connection
+    Close();
+
+    // TODO: Log?
 }
 
 bool CAxonClient::TryHandleWithServer(const CMessage& a_msg, CMessage::Ptr& a_out) const

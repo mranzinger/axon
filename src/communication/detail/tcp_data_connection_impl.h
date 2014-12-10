@@ -45,17 +45,19 @@ private:
 
 	DataReceivedHandler m_rcvHandler;
 
-	condition_variable *m_var;
+	//condition_variable *m_var;
 
 	atomic<bool> m_open;
 	mutex m_openLock;
 	condition_variable m_openCV;
 
+	mutex m_sendLock;
+
 protected:
 	atomic<size_t> m_procTime;
 
 public:
-	virtual ~Impl() { }
+	virtual ~Impl();
 
 	Impl();
 	Impl(const string &a_connectionString);
@@ -93,6 +95,7 @@ private:
 	void p_ReadCallback(bufferevent *a_evt);
 	void p_EventCallback(bufferevent *a_evt, short a_flags);
 	void p_HookupEvt();
+	void p_UnhookEvt();
 
 	static void s_WriteCallback(bufferevent *a_evt, void *a_ptr);
 	static void s_ReadCallback(bufferevent *a_evt, void *a_ptr);
@@ -102,7 +105,7 @@ private:
 
 
 inline CTcpDataConnection::Impl::Impl()
-	: m_port(-1), m_var(nullptr), m_open(false), m_evt(nullptr, s_FreeBuffEvt), m_procTime(0)
+	: m_port(-1), m_open(false), m_evt(nullptr, s_FreeBuffEvt), m_procTime(0)
 {
 	m_disp = CDispatcher::Get(1);
 
@@ -127,9 +130,14 @@ inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port)
 }
 
 inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher)
-	: m_port(a_port), m_var(nullptr), m_open(true), m_hostName(move(a_hostName)), m_evt(nullptr, s_FreeBuffEvt),
+	: m_port(a_port), m_open(true), m_hostName(move(a_hostName)), m_evt(nullptr, s_FreeBuffEvt),
 	  m_disp(move(a_dispatcher)), m_procTime(0)
 {
+}
+
+inline CTcpDataConnection::Impl::~Impl()
+{
+    p_UnhookEvt();
 }
 
 inline void CTcpDataConnection::Impl::p_SetBufferEvent(bufferevent_ptr a_evt)
@@ -143,6 +151,12 @@ inline void CTcpDataConnection::Impl::p_HookupEvt()
 {
 	bufferevent_setcb(m_evt.get(), s_ReadCallback, s_WriteCallback, s_EventCallback, this);
 	bufferevent_enable(m_evt.get(), EV_READ|EV_WRITE);
+}
+
+inline void CTcpDataConnection::Impl::p_UnhookEvt()
+{
+    bufferevent_disable(m_evt.get(), EV_READ|EV_WRITE);
+    bufferevent_setcb(m_evt.get(), nullptr, nullptr, nullptr, nullptr);
 }
 
 inline string CTcpDataConnection::Impl::ConnectionString() const
@@ -203,9 +217,14 @@ inline bool CTcpDataConnection::Impl::IsOpen() const
 
 inline void CTcpDataConnection::Impl::Send(const CBuffer& a_buff, condition_variable* a_finishEvt)
 {
-	m_var = a_finishEvt;
+	if (a_finishEvt)
+	    throw runtime_error("Signaling the end of the send is not currently supported.");
 
-	int l_ret = bufferevent_write(m_evt.get(), a_buff.data(), a_buff.size());
+	int l_ret;
+	{
+	    lock_guard<mutex> l_lock(m_sendLock);
+	    l_ret = bufferevent_write(m_evt.get(), a_buff.data(), a_buff.size());
+	}
 
 	if (l_ret != 0)
 		cout << "Failed to write socket data." << endl;
@@ -227,7 +246,7 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 
 	evbuffer *l_input = bufferevent_get_input(a_evt);
 
-	const size_t l_size = 1024;
+	const size_t l_size = 1024 * 1024;
 	CDataBuffer l_buff(l_size);
 
 	bool l_reAlloc = true;
@@ -263,13 +282,11 @@ inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short 
 
 	if (a_flags & BEV_EVENT_CONNECTED)
 	{
-		// Snag the lock to ensure synchronization
-		{
-			lock_guard<mutex> l_lock(m_openLock);
-		}
-		m_openCV.notify_all();
-
-		m_open = true;
+	    {
+	        lock_guard<mutex> l_lock(m_openLock);
+	        m_open = true;
+	    }
+        m_openCV.notify_all();
 	}
 	else if (a_flags & BEV_EVENT_ERROR)
 	{
@@ -295,17 +312,20 @@ inline void CTcpDataConnection::Impl::UpdateProcTime(const dirus& a_dur)
 
 inline void CTcpDataConnection::Impl::s_WriteCallback(bufferevent* a_evt, void* a_ptr)
 {
-	((Impl*)a_ptr)->p_WriteCallback(a_evt);
+    if (a_ptr)
+        ((Impl*)a_ptr)->p_WriteCallback(a_evt);
 }
 
 inline void CTcpDataConnection::Impl::s_ReadCallback(bufferevent* a_evt, void* a_ptr)
 {
-	((Impl*)a_ptr)->p_ReadCallback(a_evt);
+    if (a_ptr)
+        ((Impl*)a_ptr)->p_ReadCallback(a_evt);
 }
 
 inline void CTcpDataConnection::Impl::s_EventCallback(bufferevent* a_evt, short a_flags, void* a_ptr)
 {
-	((Impl*)a_ptr)->p_EventCallback(a_evt, a_flags);
+    if (a_ptr)
+        ((Impl*)a_ptr)->p_EventCallback(a_evt, a_flags);
 }
 
 }

@@ -23,6 +23,8 @@ class AXON_COMMUNICATE_API CAxonServer
 	: public AContractHost,
 	  public std::enable_shared_from_this<CAxonServer>
 {
+    friend class CAxonServerConnection;
+
 private:
 	mutable std::mutex m_clientLock;
 	std::unordered_map<IDataConnection*, CAxonServerConnectionPtr> m_clients;

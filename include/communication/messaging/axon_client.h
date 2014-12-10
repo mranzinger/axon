@@ -47,6 +47,7 @@ public:
 
 	virtual void Connect(const std::string &a_connectionString) override;
 	virtual void Connect(IDataConnection::Ptr a_connection) override;
+	virtual void Close() override;
 
 	void SetDefaultProtocol();
 	virtual void SetProtocol(IProtocol::Ptr a_protocol) override;
@@ -61,6 +62,7 @@ public:
 
 protected:
 	virtual bool TryHandleWithServer(const CMessage &a_msg, CMessage::Ptr &a_out) const;
+	virtual void HandleProtocolError(std::exception &ex);
 
 private:
 	void p_Send(const CMessage &a_message);
