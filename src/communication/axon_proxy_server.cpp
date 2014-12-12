@@ -65,62 +65,62 @@ protected:
 
 CAxonProxyServer::Ptr CAxonProxyServer::Create()
 {
-    return make_shared<CAxonProxyServer>();
+    return make_shared<CAxonProxyServer>(private_ctor());
 }
 
 CAxonProxyServer::Ptr CAxonProxyServer::Create(
         IProtocolFactory::Ptr a_protoFactory)
 {
-    return make_shared<CAxonProxyServer>(move(a_protoFactory));
+    return make_shared<CAxonProxyServer>(move(a_protoFactory), private_ctor());
 }
 
 CAxonProxyServer::Ptr CAxonProxyServer::Create(
         const std::string& a_hostString)
 {
-    return make_shared<CAxonProxyServer>(a_hostString);
+    return make_shared<CAxonProxyServer>(a_hostString, private_ctor());
 }
 
 CAxonProxyServer::Ptr CAxonProxyServer::Create(IDataServer::Ptr a_server)
 {
-    return make_shared<CAxonProxyServer>(move(a_server));
+    return make_shared<CAxonProxyServer>(move(a_server), private_ctor());
 }
 
 CAxonProxyServer::Ptr CAxonProxyServer::Create(
         const std::string& a_hostString, IProtocolFactory::Ptr a_protoFactory)
 {
-    return make_shared<CAxonProxyServer>(a_hostString, move(a_protoFactory));
+    return make_shared<CAxonProxyServer>(a_hostString, move(a_protoFactory), private_ctor());
 }
 
 CAxonProxyServer::Ptr CAxonProxyServer::Create(IDataServer::Ptr a_server,
         IProtocolFactory::Ptr a_protoFactory)
 {
-    return make_shared<CAxonProxyServer>(move(a_server), move(a_protoFactory));
+    return make_shared<CAxonProxyServer>(move(a_server), move(a_protoFactory), private_ctor());
 }
 
-CAxonProxyServer::CAxonProxyServer()
+CAxonProxyServer::CAxonProxyServer(private_ctor)
 {
 }
 
 CAxonProxyServer::CAxonProxyServer(
-        IProtocolFactory::Ptr a_protoFactory)
+        IProtocolFactory::Ptr a_protoFactory, private_ctor)
     : CAxonServer(move(a_protoFactory))
 {
 }
 
 CAxonProxyServer::CAxonProxyServer(
-        const std::string& a_hostString)
+        const std::string& a_hostString, private_ctor)
     : CAxonServer(a_hostString)
 {
 }
 
 CAxonProxyServer::CAxonProxyServer(
-        IDataServer::Ptr a_server)
+        IDataServer::Ptr a_server, private_ctor)
     : CAxonServer(move(a_server))
 {
 }
 
 CAxonProxyServer::CAxonProxyServer(
-        const std::string& a_hostString, IProtocolFactory::Ptr a_protoFactory)
+        const std::string& a_hostString, IProtocolFactory::Ptr a_protoFactory, private_ctor)
     : CAxonServer(a_hostString, move(a_protoFactory))
 {
 }
@@ -128,7 +128,7 @@ CAxonProxyServer::CAxonProxyServer(
 
 
 CAxonProxyServer::CAxonProxyServer(
-        IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory)
+        IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory, private_ctor)
     : CAxonServer(move(a_server), move(a_protoFactory))
 {
 }
@@ -148,12 +148,15 @@ void CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
     if (TryHandle(*a_message, l_localResponse))
     {
         if (!a_message->IsOneWay())
+        {
+            l_localResponse->SetOneWay(true);
             a_client->SendNonBlocking(l_localResponse);
+        }
         return;
     }
 
     // Otherwise, forward the message to an outbound client
-    CProxyConnection *l_outbound = SelectOutboundClient();
+    CProxyConnection::Ptr l_outbound = SelectOutboundClient();
 
     ++l_outbound->PendingCount;
 
@@ -163,7 +166,7 @@ void CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
         {
             a_message->Id(),
             a_client->shared_from_this(),
-            l_outbound->Client
+            l_outbound
         };
 
         lock_guard<mutex> l_lock(m_mapLock);
@@ -190,17 +193,27 @@ void CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
         m_proxyMap.erase(l_iter);
     }
 
+    --l_p.Outbound->PendingCount;
 
+    // Forward the response
+    try
+    {
+        l_p.Inbound->SendNonBlocking(a_message);
+    }
+    catch (...)
+    {
+        // TODO: Decide what to do here
+    }
 }
 
-CProxyConnection *CAxonProxyServer::SelectOutboundClient()
+CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient()
 {
     lock_guard<mutex> l_lock(m_clientLock);
 
     if (m_openClients.empty())
-        return CAxonClient::Ptr();
+        return CProxyConnection::Ptr();
 
-    CProxyConnection *l_best = nullptr;
+    CProxyConnection::Ptr l_best;
     int l_lowestCt  = numeric_limits<int>::max();
 
     for (int i = m_openClients.size() - 1; i >= 0; --i)
@@ -218,12 +231,28 @@ CProxyConnection *CAxonProxyServer::SelectOutboundClient()
 
         if (not l_best || l_pendingCt < l_lowestCt)
         {
-            l_best = l_c.get();
+            l_best = l_c;
             l_lowestCt = l_pendingCt;
         }
     }
 
     return l_best;
+}
+
+void CAxonProxyServer::AddProxy(IDataConnection::Ptr a_connection)
+{
+    auto l_client = make_shared<OutboundClient>(
+            dynamic_pointer_cast<CAxonProxyServer>(shared_from_this()),
+            move(a_connection),
+            CreateProtocol()
+    );
+
+    lock_guard<mutex> l_lock(m_clientLock);
+
+    if (l_client->IsOpen())
+        m_openClients.emplace_back(new CProxyConnection(move(l_client)));
+    else
+        m_closedClients.emplace_back(new CProxyConnection(move(l_client)));
 }
 
 } }

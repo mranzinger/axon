@@ -16,20 +16,24 @@ namespace axon { namespace communication {
 
 struct CProxyConnection
 {
-    typedef std::unique_ptr<CProxyConnection> Ptr;
+    typedef std::shared_ptr<CProxyConnection> Ptr;
 
     CAxonClient::Ptr Client;
-    std::string      HostName;
-    unsigned int     HostPort;
 
     std::atomic<int> PendingCount;
+
+    CProxyConnection() = default;
+    CProxyConnection(CAxonClient::Ptr a_client)
+        : Client(std::move(a_client))
+    {
+    }
 };
 
 struct CProxyPair
 {
     std::string      RequestId;
     CAxonClient::Ptr Inbound;
-    CAxonClient::Ptr Outbound;
+    CProxyConnection::Ptr Outbound;
 };
 
 class AXON_COMMUNICATE_API CAxonProxyServer
@@ -37,6 +41,8 @@ class AXON_COMMUNICATE_API CAxonProxyServer
 {
     class InboundClient;
     class OutboundClient;
+
+    class private_ctor { };
 
 private:
     mutable std::mutex m_clientLock;
@@ -50,6 +56,13 @@ public:
     typedef std::shared_ptr<CAxonProxyServer> Ptr;
     typedef std::weak_ptr<CAxonProxyServer> WeakPtr;
 
+    CAxonProxyServer(private_ctor);
+    CAxonProxyServer(IProtocolFactory::Ptr a_protoFactory, private_ctor);
+    CAxonProxyServer(const std::string &a_hostString, private_ctor);
+    CAxonProxyServer(IDataServer::Ptr a_server, private_ctor);
+    CAxonProxyServer(const std::string &a_hostString, IProtocolFactory::Ptr a_protoFactory, private_ctor);
+    CAxonProxyServer(IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory, private_ctor);
+
     static Ptr Create();
     static Ptr Create(IProtocolFactory::Ptr a_protoFactory);
     static Ptr Create(const std::string &a_hostString);
@@ -57,21 +70,17 @@ public:
     static Ptr Create(const std::string &a_hostString, IProtocolFactory::Ptr a_protoFactory);
     static Ptr Create(IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory);
 
+    void AddProxy(IDataConnection::Ptr a_connection);
+    void RemoveProxy(const std::string &a_connectionString);
+
 protected:
     virtual CAxonClient::Ptr CreateClient(IDataConnection::Ptr a_client) override;
 
 private:
-    CAxonProxyServer();
-    CAxonProxyServer(IProtocolFactory::Ptr a_protoFactory);
-    CAxonProxyServer(const std::string &a_hostString);
-    CAxonProxyServer(IDataServer::Ptr a_server);
-    CAxonProxyServer(const std::string &a_hostString, IProtocolFactory::Ptr a_protoFactory);
-    CAxonProxyServer(IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory);
-
     void HandleInboundMessage(InboundClient *a_client, const CMessage::Ptr &a_message);
     void HandleOutboundMessage(OutboundClient *a_client, const CMessage::Ptr &a_message);
 
-    CProxyConnection *SelectOutboundClient();
+    CProxyConnection::Ptr SelectOutboundClient();
 };
 
 } }

@@ -13,6 +13,7 @@
 #include "a_contract_host.h"
 #include "i_protocol_factory.h"
 #include "../i_data_server.h"
+#include "axon_client.h"
 
 namespace axon { namespace communication {
 
