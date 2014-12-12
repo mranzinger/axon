@@ -71,6 +71,8 @@ public:
 	virtual void Connect(IDataConnection::Ptr a_connection) = 0;
 	virtual void Close() = 0;
 
+	virtual bool IsOpen() const = 0;
+
 	virtual void SetProtocol(IProtocol::Ptr a_protocol) = 0;
 
     virtual std::string ConnectionString() const = 0;

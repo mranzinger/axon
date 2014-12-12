@@ -27,7 +27,7 @@ class AXON_COMMUNICATE_API CAxonServer
 
 private:
 	mutable std::mutex m_clientLock;
-	std::unordered_map<IDataConnection*, CAxonServerConnectionPtr> m_clients;
+	std::unordered_map<IDataConnection*, CAxonClient::Ptr> m_clients;
 
 	IDataServer::Ptr m_server;
 	IProtocolFactory::Ptr m_proto;
@@ -52,7 +52,11 @@ public:
 
 	void Broadcast(const CMessage &a_message);
 
-private:
+protected:
+	virtual CAxonClient::Ptr CreateClient(IDataConnection::Ptr a_client);
+	IProtocol::Ptr CreateProtocol();
+
+protected:
 	CAxonServer();
 	CAxonServer(IProtocolFactory::Ptr a_protoFactory);
 	CAxonServer(const std::string &a_hostString);
@@ -60,6 +64,7 @@ private:
 	CAxonServer(const std::string &a_hostString, IProtocolFactory::Ptr a_protoFactory);
 	CAxonServer(IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory);
 
+private:
 	void p_OnClientConnected(IDataConnection::Ptr a_client);
 	void p_OnClientDisconnected(IDataConnection::Ptr a_client);
 };

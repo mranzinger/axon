@@ -54,33 +54,33 @@ private:
     void p_RemoveFromSocketList(bool a_getLock);
 };
 
-CAxonClient::CAxonClient()
+CAxonClient::CAxonClient(protected_ctor)
 {
 	SetDefaultProtocol();
 }
 
-CAxonClient::CAxonClient(const std::string& a_connectionString)
+CAxonClient::CAxonClient(const std::string& a_connectionString, protected_ctor)
 {
 	SetDefaultProtocol();
 
 	Connect(a_connectionString);
 }
 
-CAxonClient::CAxonClient(IDataConnection::Ptr a_connection)
+CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, protected_ctor)
 {
 	SetDefaultProtocol();
 
 	Connect(move(a_connection));
 }
 
-CAxonClient::CAxonClient(const std::string& a_connectionString, IProtocol::Ptr a_protocol)
+CAxonClient::CAxonClient(const std::string& a_connectionString, IProtocol::Ptr a_protocol, protected_ctor)
 {
 	SetProtocol(move(a_protocol));
 
 	Connect(a_connectionString);
 }
 
-CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol)
+CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol, protected_ctor)
 {
 	SetProtocol(move(a_protocol));
 
@@ -93,29 +93,29 @@ CAxonClient::CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_pro
 
 CAxonClient::Ptr CAxonClient::Create()
 {
-	return make_shared<CAxonClient>();
+	return make_shared<CAxonClient>(protected_ctor());
 }
 
 CAxonClient::Ptr CAxonClient::Create(const std::string& a_connectionString)
 {
-	return make_shared<CAxonClient>(a_connectionString);
+	return make_shared<CAxonClient>(a_connectionString, protected_ctor());
 }
 
 CAxonClient::Ptr CAxonClient::Create(IDataConnection::Ptr a_connection)
 {
-	return make_shared<CAxonClient>(move(a_connection));
+	return make_shared<CAxonClient>(move(a_connection), protected_ctor());
 }
 
 CAxonClient::Ptr CAxonClient::Create(const std::string& a_connectionString,
 		IProtocol::Ptr a_protocol)
 {
-	return make_shared<CAxonClient>(a_connectionString, move(a_protocol));
+	return make_shared<CAxonClient>(a_connectionString, move(a_protocol), protected_ctor());
 }
 
 CAxonClient::Ptr CAxonClient::Create(IDataConnection::Ptr a_connection,
 		IProtocol::Ptr a_protocol)
 {
-	return make_shared<CAxonClient>(move(a_connection), move(a_protocol));
+	return make_shared<CAxonClient>(move(a_connection), move(a_protocol), protected_ctor());
 }
 
 void CAxonClient::Connect(const std::string& a_connectionString)
@@ -293,7 +293,7 @@ void CAxonClient::WaitHandle::p_RemoveFromSocketList(bool a_getLock)
 
 void CAxonClient::SendNonBlocking(const CMessage::Ptr &a_message)
 {
-	a_message->SetOneWay(true);
+	//a_message->SetOneWay(true);
 
 	p_Send(*a_message);
 }
@@ -307,89 +307,101 @@ void CAxonClient::p_Send(const CMessage& a_message)
 
 void CAxonClient::p_OnMessageReceived(const CMessage::Ptr& a_message)
 {
-	// This function is invoked whenever the protocol has reconstructed
-	// a message. There are 3 things that this object needs to try before
-	// erroring out:
-	// 1) Check to see if this message is a response from an outbound call
-	//    Resolution: Add the message to the new messages map and signal
-	//                that there is a new message
-	// 2) Check to see if this instance has a handler for this message
-	//    Resolution: Handle the message and send the return value back out
-	// 3) If this client is a child of a server, then see if the server
-	//      can handle the message.
-	//
-	// If none of the steps succeed, then throw a fault
+	OnMessageReceived(a_message);
+}
+
+void CAxonClient::OnMessageReceived(const CMessage::Ptr& a_message)
+{
+    // This function is invoked whenever the protocol has reconstructed
+    // a message. There are 3 things that this object needs to try before
+    // erroring out:
+    // 1) Check to see if this message is a response from an outbound call
+    //    Resolution: Add the message to the new messages map and signal
+    //                that there is a new message
+    // 2) Check to see if this instance has a handler for this message
+    //    Resolution: Handle the message and send the return value back out
+    // 3) If this client is a child of a server, then see if the server
+    //      can handle the message.
+    //
+    // If none of the steps succeed, then throw a fault
 
     SetExecutingInstance(this);
 
-	bool l_handled = false;
+    bool l_handled = false;
 
-	{
-		lock_guard<mutex> l_lock(m_pendingLock);
+    {
+        lock_guard<mutex> l_lock(m_pendingLock);
 
-		const std::string &l_reqId = a_message->RequestId();
+        const std::string &l_reqId = a_message->RequestId();
 
-		// See if the RequestId of this message is the Id of a message
-		// in the outbound list
-		auto iter = find_if(m_pendingList.begin(), m_pendingList.end(),
-				[&l_reqId] (CMessageSocket *l_sock)
-				{
-					return l_reqId == l_sock->OutboundMessage->Id();
-				});
+        // See if the RequestId of this message is the Id of a message
+        // in the outbound list
+        auto iter = find_if(m_pendingList.begin(), m_pendingList.end(),
+                [&l_reqId] (CMessageSocket *l_sock)
+                {
+                    return l_reqId == l_sock->OutboundMessage->Id();
+                });
 
-		// This message is a result of an outbound request, so let
-		// the blocking outbound requests know
-		if (iter != m_pendingList.end())
-		{
-			(*iter)->IncomingMessage = a_message;
-			l_handled = true;
-		}
-	}
+        // This message is a result of an outbound request, so let
+        // the blocking outbound requests know
+        if (iter != m_pendingList.end())
+        {
+            (*iter)->IncomingMessage = a_message;
+            l_handled = true;
+        }
+    }
 
-	if (l_handled)
-	{
-		// Wake up everyone that is currently waiting
-		m_newMessageEvent.notify_all();
-		return;
-	}
+    if (l_handled)
+    {
+        // Wake up everyone that is currently waiting
+        m_newMessageEvent.notify_all();
+        return;
+    }
 
-	// Ok, so this message isn't a result of an outbound call, so see if this
-	// client has a handler for it
-	CMessage::Ptr l_response;
-	if (TryHandle(*a_message, l_response))
-	{
-		// There was a handler for this message, so now
-		// send it back out to the caller
-		if (!a_message->IsOneWay())
-			SendNonBlocking(l_response);
-		l_handled = true;
-	}
+    // Ok, so this message isn't a result of an outbound call, so see if this
+    // client has a handler for it
+    CMessage::Ptr l_response;
+    if (TryHandle(*a_message, l_response))
+    {
+        // There was a handler for this message, so now
+        // send it back out to the caller
+        if (not a_message->IsOneWay())
+        {
+            l_response->SetOneWay(true);
+            SendNonBlocking(l_response);
+        }
+        l_handled = true;
+    }
 
-	if (l_handled)
-		return;
+    if (l_handled)
+        return;
 
-	if (TryHandleWithServer(*a_message, l_response))
-	{
-		if (!a_message->IsOneWay())
-			SendNonBlocking(l_response);
-		l_handled = true;
-	}
+    if (TryHandleWithServer(*a_message, l_response))
+    {
+        if (not a_message->IsOneWay())
+        {
+            l_response->SetOneWay(true);
+            SendNonBlocking(l_response);
+        }
+        l_handled = true;
+    }
 
-	if (l_handled)
-		return;
+    if (l_handled)
+        return;
 
-	// If this message is not a request, then send a fault back to the caller
-	if (a_message->RequestId().empty() && !a_message->IsOneWay())
-	{
-		l_response = make_shared<CMessage>(*a_message,
-				CFaultException("The action '" + a_message->GetAction() + "' has no supported handlers."));
-		SendNonBlocking(l_response);
-	}
-	else
-	{
-		// This is probably due to a timeout
-		// TODO: Log this
-	}
+    // If this message is not a request, then send a fault back to the caller
+    if (a_message->RequestId().empty() && !a_message->IsOneWay())
+    {
+        l_response = make_shared<CMessage>(*a_message,
+                CFaultException("The action '" + a_message->GetAction() + "' has no supported handlers."));
+        l_response->SetOneWay(true);
+        SendNonBlocking(l_response);
+    }
+    else
+    {
+        // This is probably due to a timeout
+        // TODO: Log this
+    }
 }
 
 void CAxonClient::p_OnDataReceived(CDataBuffer a_buffer)

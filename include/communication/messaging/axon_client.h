@@ -20,7 +20,8 @@ struct CMessageSocket;
 
 class AXON_COMMUNICATE_API CAxonClient
 	: public AContractHost,
-	  public virtual IAxonClient
+	  public virtual IAxonClient,
+	  public std::enable_shared_from_this<CAxonClient>
 {
     class WaitHandle;
 
@@ -32,12 +33,15 @@ private:
 	std::mutex m_pendingLock;
 	std::vector<CMessageSocket*> m_pendingList;
 
+protected:
+	struct protected_ctor { };
+
 public:
-	CAxonClient();
-	CAxonClient(const std::string &a_connectionString);
-	CAxonClient(IDataConnection::Ptr a_connection);
-	CAxonClient(const std::string &a_connectionString, IProtocol::Ptr a_protocol);
-	CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol);
+	CAxonClient(protected_ctor);
+	CAxonClient(const std::string &a_connectionString, protected_ctor);
+	CAxonClient(IDataConnection::Ptr a_connection, protected_ctor);
+	CAxonClient(const std::string &a_connectionString, IProtocol::Ptr a_protocol, protected_ctor);
+	CAxonClient(IDataConnection::Ptr a_connection, IProtocol::Ptr a_protocol, protected_ctor);
 
 	static Ptr Create();
 	static Ptr Create(const std::string &a_connectionString);
@@ -48,6 +52,8 @@ public:
 	virtual void Connect(const std::string &a_connectionString) override;
 	virtual void Connect(IDataConnection::Ptr a_connection) override;
 	virtual void Close() override;
+
+	virtual bool IsOpen() const override { return m_connection->IsOpen(); }
 
 	void SetDefaultProtocol();
 	virtual void SetProtocol(IProtocol::Ptr a_protocol) override;
@@ -63,6 +69,7 @@ public:
 protected:
 	virtual bool TryHandleWithServer(const CMessage &a_msg, CMessage::Ptr &a_out) const;
 	virtual void HandleProtocolError(std::exception &ex);
+	virtual void OnMessageReceived(const CMessage::Ptr &a_message);
 
 private:
 	void p_Send(const CMessage &a_message);

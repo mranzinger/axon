@@ -20,7 +20,7 @@ private:
 public:
 	CAxonServerConnection(const CAxonServer::Ptr &a_parent, IDataConnection::Ptr a_connection,
 			IProtocol::Ptr a_protocol)
-		: CAxonClient(move(a_connection), move(a_protocol)), m_parent(a_parent)
+		: CAxonClient(move(a_connection), move(a_protocol), protected_ctor()), m_parent(a_parent)
 	{
 
 	}
@@ -98,11 +98,22 @@ void CAxonServer::Broadcast(const CMessage& a_message)
 void CAxonServer::p_OnClientConnected(IDataConnection::Ptr a_client)
 {
 	auto lp = a_client.get();
-	auto l_conn = make_shared<CAxonServerConnection>(shared_from_this(),
-			move(a_client), m_proto->Create());
+	auto l_conn = CreateClient(move(a_client));
 
 	lock_guard<mutex> l_lock(m_clientLock);
 	m_clients.emplace(lp, move(l_conn));
+}
+
+CAxonClient::Ptr CAxonServer::CreateClient(IDataConnection::Ptr a_client)
+{
+    return make_shared<CAxonServerConnection>(shared_from_this(),
+                                              move(a_client),
+                                              CreateProtocol());
+}
+
+IProtocol::Ptr CAxonServer::CreateProtocol()
+{
+    return m_proto->Create();
 }
 
 void CAxonServer::p_OnClientDisconnected(IDataConnection::Ptr a_client)
@@ -175,6 +186,8 @@ CAxonServer::Ptr CAxonServer::Create(IDataServer::Ptr a_server, IProtocolFactory
 {
 	return CAxonServer::Ptr(new CAxonServer(move(a_server), move(a_protoFactory)));
 }
+
+
 
 }
 }
