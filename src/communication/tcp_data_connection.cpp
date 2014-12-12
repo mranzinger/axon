@@ -8,6 +8,8 @@
 
 #include "detail/tcp_data_connection_impl.h"
 
+using namespace std;
+
 namespace axon { namespace communication { namespace tcp {
 
 namespace {
@@ -34,6 +36,16 @@ CTcpDataConnection::CTcpDataConnection(std::string a_hostName, int a_port)
 CTcpDataConnection::CTcpDataConnection(std::unique_ptr<Impl> a_impl)
 	: m_impl(move(a_impl))
 {
+}
+
+CTcpDataConnection::Ptr CTcpDataConnection::Create()
+{
+    return make_shared<CTcpDataConnection>();
+}
+
+CTcpDataConnection::Ptr CTcpDataConnection::Create(string a_hostName, int a_port)
+{
+    return make_shared<CTcpDataConnection>(move(a_hostName), a_port);
 }
 
 CTcpDataConnection::~CTcpDataConnection()
@@ -84,4 +96,8 @@ void CTcpDataConnection::SetReceiveHandler(DataReceivedHandler a_handler)
 	m_impl->SetReceiveHandler(move(a_handler));
 }
 
-} } }
+}
+}
+}
+
+

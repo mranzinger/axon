@@ -81,6 +81,9 @@ private:
     void HandleOutboundMessage(OutboundClient *a_client, const CMessage::Ptr &a_message);
 
     CProxyConnection::Ptr SelectOutboundClient();
+
+    void RemoveProxy(std::vector<CProxyConnection::Ptr> &a_conns,
+                     const std::string &a_connectionString);
 };
 
 } }

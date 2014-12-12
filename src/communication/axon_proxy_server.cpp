@@ -255,4 +255,30 @@ void CAxonProxyServer::AddProxy(IDataConnection::Ptr a_connection)
         m_closedClients.emplace_back(new CProxyConnection(move(l_client)));
 }
 
+void CAxonProxyServer::RemoveProxy(const string &a_connectionString)
+{
+    lock_guard<mutex> l_lock(m_clientLock);
+
+    RemoveProxy(m_openClients, a_connectionString);
+    RemoveProxy(m_closedClients, a_connectionString);
+}
+
+void CAxonProxyServer::RemoveProxy(std::vector<CProxyConnection::Ptr>& a_conns,
+                                   const std::string& a_connectionString)
+{
+    if (a_conns.empty())
+        return;
+
+    for (int i = a_conns.size() - 1; i >= 0; --i)
+    {
+        CProxyConnection::Ptr &l_conn = a_conns[i];
+
+        if (l_conn->Client->ConnectionString().find(a_connectionString) !=
+            string::npos)
+        {
+            a_conns.erase(begin(a_conns) + i);
+        }
+    }
+}
+
 } }

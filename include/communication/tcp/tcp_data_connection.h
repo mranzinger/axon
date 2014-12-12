@@ -33,6 +33,9 @@ public:
 
 	~CTcpDataConnection();
 
+	static Ptr Create();
+	static Ptr Create(std::string a_hostName, int a_port);
+
 	virtual std::string ConnectionString() const;
 
 	bool Connect(std::string a_hostName, int a_port);
