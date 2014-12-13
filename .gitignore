@@ -5,3 +5,5 @@ demo/serialization_demo_debug
 demo/serialization_demo_release
 tools/proxy_server/obj/
 tools/proxy_server/proxy_server
+tools/proxy_client/obj/
+tools/proxy_client/proxy_client
