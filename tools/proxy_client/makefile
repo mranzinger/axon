@@ -1,5 +1,6 @@
 BOOST_PATH		?= $(THIRD_PARTY)/boost_1_55_0
 AXON_PATH		?= ../..
+LIBEVENT_PATH   ?= $(THIRD_PARTY)/libevent/install
 
 SYMS	 :=
 #SYMS	 += -g
@@ -9,12 +10,15 @@ OPTLEVEL :=
 CC := g++-4.7 -std=c++11 $(SYMS) $(OPTLEVEL)
 
 INCLUDES := -I$(BOOST_PATH)/include \
-			-I$(AXON_PATH)/include
+			-I$(AXON_PATH)/include \
+			-I$(LIBEVENT_PATH)/include
 			
 LDFLAGS := -L$(BOOST_PATH)/lib \
-		   -L$(AXON_PATH)/lib
+		   -L$(AXON_PATH)/lib \
+		   -L$(LIBEVENT_PATH)/lib
 
 LIB := -laxutild -laxserd -laxcommd \
+	   -levent -levent_pthreads \
        -lboost_program_options
        
 TOOL_SRC := proxy_client.cpp

@@ -7,6 +7,8 @@
 
 #include "communication/messaging/axon_proxy_server.h"
 
+#include <iostream>
+
 using namespace std;
 
 namespace axon { namespace communication {
@@ -321,6 +323,10 @@ void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
     if (a_conn->Contracts.empty())
     {
         a_conn->Contracts = a_conn->Client->Send(QUERY_CONTRACTS_CONTRACT);
+
+        cout << "Discovered the following contracts:" << endl;
+        for (const string &l_c : a_conn->Contracts)
+            cout << l_c << endl;
     }
 
     for (const string &l_c : a_conn->Contracts)
