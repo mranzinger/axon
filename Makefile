@@ -1,4 +1,4 @@
-CC=g++-4.7
+CC=g++
 FLAGS=-std=c++11 -g -msse4.2 -fPIC
 DFLAGS=$(FLAGS)
 RFLAGS=-O3 $(FLAGS)

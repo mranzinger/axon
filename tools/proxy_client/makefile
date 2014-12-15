@@ -7,7 +7,7 @@ SYMS	 :=
 OPTLEVEL :=
 #OPTLEVEL += -O3
 
-CC := g++-4.7 -std=c++11 $(SYMS) $(OPTLEVEL)
+CC := g++ -std=c++11 $(SYMS) $(OPTLEVEL)
 
 INCLUDES := -I$(BOOST_PATH)/include \
 			-I$(AXON_PATH)/include \
