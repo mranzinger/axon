@@ -12,12 +12,39 @@ using namespace std;
 
 namespace axon { namespace communication {
 
+AContractHost::AContractHost()
+{
+    HostContract(QUERY_CONTRACTS_CONTRACT,
+                 bind(&AContractHost::p_QueryContracts, this));
+}
+
+vector<string> AContractHost::p_QueryContracts() const
+{
+    return QueryContracts();
+}
+
+vector<string> AContractHost::QueryContracts() const
+{
+    vector<string> l_ret;
+
+    {
+        lock_guard<mutex> l_lock(m_handlerLock);
+
+        for (const pair<string, IContractHandlerPtr> &l_p : m_handlers)
+        {
+            l_ret.push_back(l_p.first);
+        }
+    }
+
+    return move(l_ret);
+}
+
 void AContractHost::Host(IContractHandlerPtr a_handler)
 {
-	std::lock_guard<std::mutex> l_lock(m_handlerLock);
+	lock_guard<mutex> l_lock(m_handlerLock);
 
 	if (!m_handlers.insert(HandlerMap::value_type(a_handler->GetAction(), a_handler)).second)
-		throw std::runtime_error("The specified contract action is already being hosted.");
+		throw runtime_error("The specified contract action is already being hosted.");
 }
 
 CMessage::Ptr AContractHost::Handle(const CMessage& a_msg) const
@@ -80,6 +107,8 @@ void AContractHost::Adopt(const AContractHost& a_other)
 
 	m_handlers.insert(a_other.m_handlers.begin(), a_other.m_handlers.end());
 }
+
+
 
 }
 }

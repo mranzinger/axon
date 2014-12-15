@@ -17,6 +17,8 @@ typedef std::shared_ptr<IContractHandler> IContractHandlerPtr;
 template<typename ContractType>
 class CContractHandler;
 
+extern const CContract<std::vector<std::string> ()> QUERY_CONTRACTS_CONTRACT;
+
 class AXON_COMMUNICATE_API IContractHost
 {
 public:
@@ -44,6 +46,8 @@ public:
 	virtual bool TryHandle(const CMessage &a_msg, CMessage::Ptr &a_out) const = 0;
 
 	virtual IContractHandlerPtr FindHandler(const std::string &a_action) const = 0;
+
+	virtual std::vector<std::string> QueryContracts() const = 0;
 };
 
 class AXON_COMMUNICATE_API IContractHandler

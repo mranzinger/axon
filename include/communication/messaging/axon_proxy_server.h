@@ -8,6 +8,7 @@
 #pragma once
 
 #include <atomic>
+#include <random>
 
 #include "axon_server.h"
 #include "axon_client.h"
@@ -19,6 +20,7 @@ struct CProxyConnection
     typedef std::shared_ptr<CProxyConnection> Ptr;
 
     CAxonClient::Ptr Client;
+    std::vector<std::string> Contracts;
 
     std::atomic<int> PendingCount;
 
@@ -28,6 +30,9 @@ struct CProxyConnection
     {
     }
 };
+
+typedef std::vector<CProxyConnection::Ptr> CProxyConnectionList;
+typedef std::unordered_map<std::string, CProxyConnectionList> CContractProxyMap;
 
 struct CProxyPair
 {
@@ -46,8 +51,11 @@ class AXON_COMMUNICATE_API CAxonProxyServer
 
 private:
     mutable std::mutex m_clientLock;
-    std::vector<CProxyConnection::Ptr> m_openClients;
-    std::vector<CProxyConnection::Ptr> m_closedClients;
+    CContractProxyMap m_openClients;
+    CProxyConnectionList m_closedClients;
+    std::mt19937 m_selectRand;
+    //std::vector<CProxyConnection::Ptr> m_openClients;
+    //std::vector<CProxyConnection::Ptr> m_closedClients;
 
     mutable std::mutex m_mapLock;
     std::unordered_map<std::string, CProxyPair> m_proxyMap;
@@ -73,6 +81,8 @@ public:
     void AddProxy(IDataConnection::Ptr a_connection);
     void RemoveProxy(const std::string &a_connectionString);
 
+    virtual std::vector<std::string> QueryContracts() const override;
+
 protected:
     virtual CAxonClient::Ptr CreateClient(IDataConnection::Ptr a_client) override;
 
@@ -80,10 +90,15 @@ private:
     void HandleInboundMessage(InboundClient *a_client, const CMessage::Ptr &a_message);
     void HandleOutboundMessage(OutboundClient *a_client, const CMessage::Ptr &a_message);
 
-    CProxyConnection::Ptr SelectOutboundClient();
+    CProxyConnection::Ptr SelectOutboundClient(const CMessage &a_message);
 
-    void RemoveProxy(std::vector<CProxyConnection::Ptr> &a_conns,
-                     const std::string &a_connectionString);
+    void usRemoveProxy(CContractProxyMap &a_conns,
+                       const std::string &a_connectionString);
+    void usRemoveProxy(CProxyConnectionList &a_conns,
+                       const std::string &a_connectionString);
+
+    void usAddToOpenClients(CProxyConnection::Ptr a_conn);
+    void usAddToDisconnected(CProxyConnection::Ptr a_conn);
 };
 
 } }

@@ -37,8 +37,12 @@ public:
 
 	virtual IContractHandlerPtr FindHandler(const std::string &a_action) const override;
 
+	virtual std::vector<std::string> QueryContracts() const override;
+
 protected:
-	AContractHost() { }
+	AContractHost();
+
+	std::vector<std::string> p_QueryContracts() const;
 };
 
 

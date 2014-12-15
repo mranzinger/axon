@@ -156,7 +156,7 @@ void CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
     }
 
     // Otherwise, forward the message to an outbound client
-    CProxyConnection::Ptr l_outbound = SelectOutboundClient();
+    CProxyConnection::Ptr l_outbound = SelectOutboundClient(*a_message);
 
     ++l_outbound->PendingCount;
 
@@ -206,37 +206,47 @@ void CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
     }
 }
 
-CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient()
+CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient(const CMessage &a_message)
 {
     lock_guard<mutex> l_lock(m_clientLock);
 
-    if (m_openClients.empty())
+    auto l_iter = m_openClients.find(a_message.GetAction());
+
+    if (l_iter == m_openClients.end())
         return CProxyConnection::Ptr();
 
-    CProxyConnection::Ptr l_best;
+    CProxyConnectionList &l_conns = l_iter->second;
+
+    if (l_conns.empty())
+        return CProxyConnection::Ptr();
+
+    CProxyConnectionList l_best;
     int l_lowestCt  = numeric_limits<int>::max();
 
-    for (int i = m_openClients.size() - 1; i >= 0; --i)
+    for (int i = l_conns.size() - 1; i >= 0; --i)
     {
-        CProxyConnection::Ptr &l_c = m_openClients[i];
+        CProxyConnection::Ptr &l_c = l_conns[i];
 
         if (not l_c->Client->IsOpen())
         {
-            m_closedClients.push_back(move(l_c));
-            m_openClients.erase(begin(m_openClients) + i);
+            usAddToDisconnected(move(l_c));
+            l_conns.erase(begin(l_conns) + i);
             continue;
         }
 
         int l_pendingCt = l_c->PendingCount;
 
-        if (not l_best || l_pendingCt < l_lowestCt)
+        if (l_best.empty() || l_pendingCt < l_lowestCt)
         {
-            l_best = l_c;
+            l_best.clear();
+            l_best.push_back(l_c);
             l_lowestCt = l_pendingCt;
         }
     }
 
-    return l_best;
+    size_t l_selectIdx = m_selectRand() % l_best.size();
+
+    return move(l_best[l_selectIdx]);
 }
 
 void CAxonProxyServer::AddProxy(IDataConnection::Ptr a_connection)
@@ -250,20 +260,29 @@ void CAxonProxyServer::AddProxy(IDataConnection::Ptr a_connection)
     lock_guard<mutex> l_lock(m_clientLock);
 
     if (l_client->IsOpen())
-        m_openClients.emplace_back(new CProxyConnection(move(l_client)));
+        usAddToOpenClients(CProxyConnection::Ptr(new CProxyConnection(move(l_client))));
     else
-        m_closedClients.emplace_back(new CProxyConnection(move(l_client)));
+        usAddToDisconnected(CProxyConnection::Ptr(new CProxyConnection(move(l_client))));
 }
 
 void CAxonProxyServer::RemoveProxy(const string &a_connectionString)
 {
     lock_guard<mutex> l_lock(m_clientLock);
 
-    RemoveProxy(m_openClients, a_connectionString);
-    RemoveProxy(m_closedClients, a_connectionString);
+    usRemoveProxy(m_openClients, a_connectionString);
+    usRemoveProxy(m_closedClients, a_connectionString);
 }
 
-void CAxonProxyServer::RemoveProxy(std::vector<CProxyConnection::Ptr>& a_conns,
+void CAxonProxyServer::usRemoveProxy(CContractProxyMap& a_conns,
+                                   const std::string& a_connectionString)
+{
+    for (pair<const string, CProxyConnectionList> &a_c : a_conns)
+    {
+        usRemoveProxy(a_c.second, a_connectionString);
+    }
+}
+
+void CAxonProxyServer::usRemoveProxy(std::vector<CProxyConnection::Ptr>& a_conns,
                                    const std::string& a_connectionString)
 {
     if (a_conns.empty())
@@ -278,6 +297,45 @@ void CAxonProxyServer::RemoveProxy(std::vector<CProxyConnection::Ptr>& a_conns,
         {
             a_conns.erase(begin(a_conns) + i);
         }
+    }
+}
+
+vector<string> CAxonProxyServer::QueryContracts() const
+{
+    vector<string> l_ret = CAxonServer::QueryContracts();
+
+    {
+        lock_guard<mutex> l_lock(m_clientLock);
+
+        for (const pair<const string, CProxyConnectionList> &a_c : m_openClients)
+        {
+            l_ret.push_back(a_c.first);
+        }
+    }
+
+    return move(l_ret);
+}
+
+void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
+{
+    if (a_conn->Contracts.empty())
+    {
+        a_conn->Contracts = a_conn->Client->Send(QUERY_CONTRACTS_CONTRACT);
+    }
+
+    for (const string &l_c : a_conn->Contracts)
+    {
+        m_openClients[l_c].push_back(a_conn);
+    }
+}
+
+void CAxonProxyServer::usAddToDisconnected(CProxyConnection::Ptr a_conn)
+{
+    auto l_iter = find(begin(m_closedClients), end(m_closedClients), a_conn);
+
+    if (l_iter == end(m_closedClients))
+    {
+        m_closedClients.push_back(move(a_conn));
     }
 }
 
