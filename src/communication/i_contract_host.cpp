@@ -9,7 +9,7 @@
 
 namespace axon { namespace communication {
 
-const CContract<std::vector<std::string> ()> QUERY_CONTRACTS_CONTRACT
+const CContract<std::set<std::string> ()> QUERY_CONTRACTS_CONTRACT
         ("IContractHost.QueryContracts");
 
 } }

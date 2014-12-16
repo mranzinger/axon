@@ -67,7 +67,7 @@ public:
 	virtual void SendNonBlocking(const CMessage::Ptr &a_message) override;
 
 protected:
-	virtual bool TryHandleWithServer(const CMessage &a_msg, CMessage::Ptr &a_out) const;
+	virtual bool TryHandleWithServer(const CMessage::Ptr &a_msg, CMessage::Ptr &a_out) const;
 	virtual void HandleProtocolError(std::exception &ex);
 	virtual void OnMessageReceived(const CMessage::Ptr &a_message);
 

@@ -302,6 +302,8 @@ void CAxonClient::p_Send(const CMessage& a_message)
 {
 	CDataBuffer l_buffer = m_protocol->SerializeMessage(a_message);
 
+	cout << "Sending " << l_buffer.size() << "bytes." << endl;
+
 	m_connection->Send(l_buffer.ToShared());
 }
 
@@ -334,6 +336,8 @@ void CAxonClient::OnMessageReceived(const CMessage::Ptr& a_message)
 
         const std::string &l_reqId = a_message->RequestId();
 
+        cout << a_message->Id() << endl;
+
         // See if the RequestId of this message is the Id of a message
         // in the outbound list
         auto iter = find_if(m_pendingList.begin(), m_pendingList.end(),
@@ -363,10 +367,13 @@ void CAxonClient::OnMessageReceived(const CMessage::Ptr& a_message)
     CMessage::Ptr l_response;
     if (TryHandle(*a_message, l_response))
     {
+        cout << "Successfully handled with the client." << endl;
+
         // There was a handler for this message, so now
         // send it back out to the caller
-        if (not a_message->IsOneWay())
+        if (not a_message->IsOneWay() && l_response)
         {
+            cout << "Sending response." << endl;
             l_response->SetOneWay(true);
             SendNonBlocking(l_response);
         }
@@ -376,10 +383,13 @@ void CAxonClient::OnMessageReceived(const CMessage::Ptr& a_message)
     if (l_handled)
         return;
 
-    if (TryHandleWithServer(*a_message, l_response))
+    if (TryHandleWithServer(a_message, l_response))
     {
-        if (not a_message->IsOneWay())
+        cout << "Successfully handled with server." << endl;
+
+        if (not a_message->IsOneWay() && l_response)
         {
+            cout << "Sending response." << endl;
             l_response->SetOneWay(true);
             SendNonBlocking(l_response);
         }
@@ -431,7 +441,7 @@ void CAxonClient::HandleProtocolError(exception& ex)
     // TODO: Log?
 }
 
-bool CAxonClient::TryHandleWithServer(const CMessage& a_msg, CMessage::Ptr& a_out) const
+bool CAxonClient::TryHandleWithServer(const CMessage::Ptr &a_msg, CMessage::Ptr& a_out) const
 {
 	// Derived instances need to override this
 	return false;

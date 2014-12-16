@@ -79,6 +79,11 @@ int main(int argc, char *argv[])
                          placeholders::_1
                          ));
 
+    for (const string &l_c : l_clients)
+    {
+        AddClient(l_server, l_c);
+    }
+
     while (true)
     {
         cout << "Enter command:" << endl

@@ -7,6 +7,8 @@
 #ifndef I_CONTRACT_HOST_H_
 #define I_CONTRACT_HOST_H_
 
+#include <set>
+
 #include "contract.h"
 
 namespace axon { namespace communication {
@@ -17,7 +19,7 @@ typedef std::shared_ptr<IContractHandler> IContractHandlerPtr;
 template<typename ContractType>
 class CContractHandler;
 
-extern const CContract<std::vector<std::string> ()> QUERY_CONTRACTS_CONTRACT;
+extern const CContract<std::set<std::string> ()> QUERY_CONTRACTS_CONTRACT;
 
 class AXON_COMMUNICATE_API IContractHost
 {
@@ -47,7 +49,7 @@ public:
 
 	virtual IContractHandlerPtr FindHandler(const std::string &a_action) const = 0;
 
-	virtual std::vector<std::string> QueryContracts() const = 0;
+	virtual std::set<std::string> QueryContracts() const = 0;
 };
 
 class AXON_COMMUNICATE_API IContractHandler

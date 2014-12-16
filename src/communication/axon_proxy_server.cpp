@@ -27,15 +27,32 @@ public:
     {
     }
 
+    virtual set<string> QueryContracts() const override
+    {
+        set<string> l_ret = CAxonClient::QueryContracts();
+
+        auto l_parent = m_parent.lock();
+
+        if (not l_parent)
+            return move(l_ret);
+
+        set<string> l_server = l_parent->QueryContracts();
+
+        l_ret.insert(begin(l_server), end(l_server));
+
+        return move(l_ret);
+    }
+
 protected:
-    virtual void OnMessageReceived(const CMessage::Ptr &a_message)
+    virtual bool TryHandleWithServer(const CMessage::Ptr &a_message, CMessage::Ptr &a_out) const override
     {
         auto l_parent = m_parent.lock();
 
         if (!l_parent)
-            return;
+            return false;
 
-        l_parent->HandleInboundMessage(this, a_message);
+        return l_parent->HandleInboundMessage(const_cast<InboundClient*>(this),
+                                              a_message);
     }
 };
 
@@ -54,14 +71,15 @@ public:
     }
 
 protected:
-    virtual void OnMessageReceived(const CMessage::Ptr &a_message)
+    virtual bool TryHandleWithServer(const CMessage::Ptr &a_message, CMessage::Ptr &a_out) const override
     {
         auto l_parent = m_parent.lock();
 
         if (!l_parent)
-            return;
+            return false;
 
-        l_parent->HandleOutboundMessage(this, a_message);
+        return l_parent->HandleOutboundMessage(const_cast<OutboundClient*>(this),
+                                               a_message);
     }
 };
 
@@ -142,23 +160,26 @@ CAxonClient::Ptr CAxonProxyServer::CreateClient(IDataConnection::Ptr a_client)
                                       CreateProtocol());
 }
 
-void CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
+bool CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
                                              const CMessage::Ptr& a_message)
 {
     // Check to see if this can be handled locally
     CMessage::Ptr l_localResponse;
     if (TryHandle(*a_message, l_localResponse))
     {
-        if (!a_message->IsOneWay())
+        if (not a_message->IsOneWay())
         {
             l_localResponse->SetOneWay(true);
             a_client->SendNonBlocking(l_localResponse);
         }
-        return;
+        return true;
     }
 
     // Otherwise, forward the message to an outbound client
     CProxyConnection::Ptr l_outbound = SelectOutboundClient(*a_message);
+
+    if (not l_outbound)
+        return false;
 
     ++l_outbound->PendingCount;
 
@@ -177,11 +198,27 @@ void CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
 
     // TODO: Need to catch errors here
     l_outbound->Client->SendNonBlocking(a_message);
+
+    return true;
 }
 
-void CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
+bool CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
                                              const CMessage::Ptr& a_message)
 {
+    cout << "Received message from real server." << endl;
+
+    // Check to see if this can be handled locally
+    CMessage::Ptr l_localResponse;
+    if (TryHandle(*a_message, l_localResponse))
+    {
+        if (not a_message->IsOneWay())
+        {
+            l_localResponse->SetOneWay(true);
+            a_client->SendNonBlocking(l_localResponse);
+        }
+        return true;
+    }
+
     CProxyPair l_p;
     {
         lock_guard<mutex> l_lock(m_mapLock);
@@ -189,7 +226,7 @@ void CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
         auto l_iter = m_proxyMap.find(a_message->RequestId());
 
         if (l_iter == m_proxyMap.end())
-            return;
+            return false;
 
         l_p = l_iter->second;
         m_proxyMap.erase(l_iter);
@@ -206,6 +243,7 @@ void CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
     {
         // TODO: Decide what to do here
     }
+    return true;
 }
 
 CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient(const CMessage &a_message)
@@ -243,6 +281,10 @@ CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient(const CMessage &a_m
             l_best.clear();
             l_best.push_back(l_c);
             l_lowestCt = l_pendingCt;
+        }
+        else if (l_pendingCt == l_lowestCt)
+        {
+            l_best.push_back(l_c);
         }
     }
 
@@ -302,16 +344,16 @@ void CAxonProxyServer::usRemoveProxy(std::vector<CProxyConnection::Ptr>& a_conns
     }
 }
 
-vector<string> CAxonProxyServer::QueryContracts() const
+set<string> CAxonProxyServer::QueryContracts() const
 {
-    vector<string> l_ret = CAxonServer::QueryContracts();
+    set<string> l_ret = CAxonServer::QueryContracts();
 
     {
         lock_guard<mutex> l_lock(m_clientLock);
 
         for (const pair<const string, CProxyConnectionList> &a_c : m_openClients)
         {
-            l_ret.push_back(a_c.first);
+            l_ret.insert(a_c.first);
         }
     }
 
@@ -322,7 +364,22 @@ void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
 {
     if (a_conn->Contracts.empty())
     {
-        a_conn->Contracts = a_conn->Client->Send(QUERY_CONTRACTS_CONTRACT);
+        cout << "Finding supported contracts..." << flush;
+
+        for (int i = 0; i < 3; ++i)
+        {
+            try
+            {
+                a_conn->Contracts = a_conn->Client->Send(QUERY_CONTRACTS_CONTRACT, 1000);
+                break;
+            }
+            catch (CTimeoutException)
+            {
+                cout << (i+1) << "..." << endl;
+            }
+        }
+
+        cout << "done." << endl;
 
         cout << "Discovered the following contracts:" << endl;
         for (const string &l_c : a_conn->Contracts)

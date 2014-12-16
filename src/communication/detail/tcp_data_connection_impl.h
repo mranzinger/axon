@@ -266,6 +266,8 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 
 		l_buff.UpdateSize(l_actual);
 
+		cout << "Read " << l_actual << " bytes." << endl;
+
 		m_rcvHandler(move(l_buff));
 
 		l_buff.Reset(l_size);

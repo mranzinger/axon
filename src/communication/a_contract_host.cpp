@@ -18,21 +18,28 @@ AContractHost::AContractHost()
                  bind(&AContractHost::p_QueryContracts, this));
 }
 
-vector<string> AContractHost::p_QueryContracts() const
+set<string> AContractHost::p_QueryContracts() const
 {
-    return QueryContracts();
+    cout << "QueryContracts called." << endl;
+
+    set<string> l_c = QueryContracts();
+
+    for (const string &s : l_c)
+        cout << s << endl;
+
+    return move(l_c);
 }
 
-vector<string> AContractHost::QueryContracts() const
+set<string> AContractHost::QueryContracts() const
 {
-    vector<string> l_ret;
+    set<string> l_ret;
 
     {
         lock_guard<mutex> l_lock(m_handlerLock);
 
         for (const pair<string, IContractHandlerPtr> &l_p : m_handlers)
         {
-            l_ret.push_back(l_p.first);
+            l_ret.insert(l_p.first);
         }
     }
 

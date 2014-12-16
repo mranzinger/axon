@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <random>
+#include <set>
 
 #include "axon_server.h"
 #include "axon_client.h"
@@ -20,7 +21,7 @@ struct CProxyConnection
     typedef std::shared_ptr<CProxyConnection> Ptr;
 
     CAxonClient::Ptr Client;
-    std::vector<std::string> Contracts;
+    std::set<std::string> Contracts;
 
     std::atomic<int> PendingCount;
 
@@ -81,14 +82,14 @@ public:
     void AddProxy(IDataConnection::Ptr a_connection);
     void RemoveProxy(const std::string &a_connectionString);
 
-    virtual std::vector<std::string> QueryContracts() const override;
+    virtual std::set<std::string> QueryContracts() const override;
 
 protected:
     virtual CAxonClient::Ptr CreateClient(IDataConnection::Ptr a_client) override;
 
 private:
-    void HandleInboundMessage(InboundClient *a_client, const CMessage::Ptr &a_message);
-    void HandleOutboundMessage(OutboundClient *a_client, const CMessage::Ptr &a_message);
+    bool HandleInboundMessage(InboundClient *a_client, const CMessage::Ptr &a_message);
+    bool HandleOutboundMessage(OutboundClient *a_client, const CMessage::Ptr &a_message);
 
     CProxyConnection::Ptr SelectOutboundClient(const CMessage &a_message);
 

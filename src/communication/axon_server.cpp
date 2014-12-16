@@ -34,12 +34,28 @@ public:
 		throw runtime_error("Cannot change the connection of a server managed client.");
 	}
 
+	virtual set<string> QueryContracts() const override
+    {
+	    set<string> l_ret = CAxonClient::QueryContracts();
+
+	    auto l_parent = m_parent.lock();
+
+	    if (not l_parent)
+	        return move(l_ret);
+
+	    set<string> l_server = l_parent->QueryContracts();
+
+	    l_ret.insert(begin(l_server), end(l_server));
+
+	    return move(l_ret);
+    }
+
 protected:
-	virtual bool TryHandleWithServer(const CMessage &a_msg, CMessage::Ptr &a_out) const override
+	virtual bool TryHandleWithServer(const CMessage::Ptr &a_msg, CMessage::Ptr &a_out) const override
 	{
 		auto l_parent = m_parent.lock();
 
-		if (!l_parent)
+		if (not l_parent)
 		{
 			// Somehow this connection got orphaned. Either way, just ignore
 			// and say it wasn't handled.
@@ -48,7 +64,7 @@ protected:
 		}
 
 		// Let the server try to handle it
-		return l_parent->TryHandle(a_msg, a_out);
+		return l_parent->TryHandle(*a_msg, a_out);
 	}
 };
 
