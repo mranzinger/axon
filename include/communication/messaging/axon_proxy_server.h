@@ -16,6 +16,8 @@
 
 namespace axon { namespace communication {
 
+typedef std::shared_ptr<std::atomic<int>> TSharedCt;
+
 struct CProxyConnection
 {
     typedef std::shared_ptr<CProxyConnection> Ptr;
@@ -23,12 +25,22 @@ struct CProxyConnection
     CAxonClient::Ptr Client;
     std::set<std::string> Contracts;
 
-    std::atomic<int> PendingCount;
+    TSharedCt PendingCount;
 
-    CProxyConnection() = default;
+    CProxyConnection()
+    {
+        PendingCount.reset(new std::atomic<int>);
+    }
     CProxyConnection(CAxonClient::Ptr a_client)
         : Client(std::move(a_client))
     {
+        PendingCount.reset(new std::atomic<int>);
+    }
+    CProxyConnection(CAxonClient::Ptr a_client, TSharedCt a_counter)
+        : Client(std::move(a_client)), PendingCount(std::move(a_counter))
+    {
+        if (not PendingCount)
+            PendingCount.reset(new std::atomic<int>);
     }
 };
 
@@ -80,6 +92,7 @@ public:
     static Ptr Create(IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory);
 
     void AddProxy(IDataConnection::Ptr a_connection);
+    void AddProxies(const std::vector<IDataConnection::Ptr> &a_conns);
     void RemoveProxy(const std::string &a_connectionString);
 
     virtual std::set<std::string> QueryContracts() const override;

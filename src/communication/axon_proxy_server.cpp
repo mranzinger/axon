@@ -63,7 +63,8 @@ private:
     CAxonProxyServer::WeakPtr m_parent;
 
 public:
-    OutboundClient(const CAxonProxyServer::Ptr &a_parent, IDataConnection::Ptr a_connection,
+    OutboundClient(const CAxonProxyServer::Ptr &a_parent,
+                   IDataConnection::Ptr a_connection,
                    IProtocol::Ptr a_protocol)
         : CAxonClient(move(a_connection), move(a_protocol), protected_ctor()),
           m_parent(a_parent)
@@ -181,7 +182,7 @@ bool CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
     if (not l_outbound)
         return false;
 
-    ++l_outbound->PendingCount;
+    ++(*l_outbound->PendingCount);
 
     if (not a_message->IsOneWay())
     {
@@ -230,7 +231,7 @@ bool CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
         m_proxyMap.erase(l_iter);
     }
 
-    --l_p.Outbound->PendingCount;
+    --(*l_p.Outbound->PendingCount);
 
     // Forward the response
     try
@@ -272,7 +273,7 @@ CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient(const CMessage &a_m
             continue;
         }
 
-        int l_pendingCt = l_c->PendingCount;
+        int l_pendingCt = *l_c->PendingCount;
 
         if (l_best.empty() || l_pendingCt < l_lowestCt)
         {
@@ -293,18 +294,28 @@ CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient(const CMessage &a_m
 
 void CAxonProxyServer::AddProxy(IDataConnection::Ptr a_connection)
 {
-    auto l_client = make_shared<OutboundClient>(
-            dynamic_pointer_cast<CAxonProxyServer>(shared_from_this()),
-            move(a_connection),
-            CreateProtocol()
-    );
+    AddProxies({ a_connection });
+}
 
-    lock_guard<mutex> l_lock(m_clientLock);
+void CAxonProxyServer::AddProxies(const vector<IDataConnection::Ptr> &a_conns)
+{
+    auto l_counter = make_shared<atomic<int>>();
 
-    if (l_client->IsOpen())
-        usAddToOpenClients(CProxyConnection::Ptr(new CProxyConnection(move(l_client))));
-    else
-        usAddToDisconnected(CProxyConnection::Ptr(new CProxyConnection(move(l_client))));
+    for (const IDataConnection::Ptr &l_conn : a_conns)
+    {
+        auto l_client = make_shared<OutboundClient>(
+                dynamic_pointer_cast<CAxonProxyServer>(shared_from_this()),
+                l_conn,
+                CreateProtocol()
+        );
+
+        lock_guard<mutex> l_lock(m_clientLock);
+
+        if (l_client->IsOpen())
+            usAddToOpenClients(make_shared<CProxyConnection>(move(l_client), l_counter));
+        else
+            usAddToDisconnected(make_shared<CProxyConnection>(move(l_client), l_counter));
+    }
 }
 
 void CAxonProxyServer::RemoveProxy(const string &a_connectionString)
