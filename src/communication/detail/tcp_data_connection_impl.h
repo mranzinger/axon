@@ -246,7 +246,7 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 
 	evbuffer *l_input = bufferevent_get_input(a_evt);
 
-	const size_t l_size = 1024 * 1024;
+	const size_t l_size = 4096;
 	CDataBuffer l_buff(l_size);
 
 	bool l_reAlloc = true;
@@ -265,8 +265,6 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 		}
 
 		l_buff.UpdateSize(l_actual);
-
-		cout << "Read " << l_actual << " bytes." << endl;
 
 		m_rcvHandler(move(l_buff));
 

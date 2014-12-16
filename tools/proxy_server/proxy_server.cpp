@@ -142,9 +142,12 @@ void AddClient(const comm::CAxonProxyServer::Ptr &a_server, const string& a_info
     string l_sPort = a_info.substr(l_pos + 1);
     auto l_port = boost::lexical_cast<int>(l_sPort);
 
-    auto l_conn = comm::tcp::CTcpDataConnection::Create(l_host, l_port);
+    for (size_t i = 0; i < 4; ++i)
+    {
+        auto l_conn = comm::tcp::CTcpDataConnection::Create(l_host, l_port);
 
-    a_server->AddProxy(move(l_conn));
+        a_server->AddProxy(move(l_conn));
+    }
 }
 
 void RemoveClient(const comm::CAxonProxyServer::Ptr &a_server, const string& a_info)

@@ -20,14 +20,7 @@ AContractHost::AContractHost()
 
 set<string> AContractHost::p_QueryContracts() const
 {
-    cout << "QueryContracts called." << endl;
-
-    set<string> l_c = QueryContracts();
-
-    for (const string &s : l_c)
-        cout << s << endl;
-
-    return move(l_c);
+    return QueryContracts();
 }
 
 set<string> AContractHost::QueryContracts() const

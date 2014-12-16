@@ -205,8 +205,6 @@ bool CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
 bool CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
                                              const CMessage::Ptr& a_message)
 {
-    cout << "Received message from real server." << endl;
-
     // Check to see if this can be handled locally
     CMessage::Ptr l_localResponse;
     if (TryHandle(*a_message, l_localResponse))
@@ -364,7 +362,9 @@ void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
 {
     if (a_conn->Contracts.empty())
     {
-        cout << "Finding supported contracts..." << flush;
+        cout << "Finding supported contracts ("
+             << a_conn->Client->ConnectionString()
+             << ")..." << flush;
 
         for (int i = 0; i < 3; ++i)
         {
