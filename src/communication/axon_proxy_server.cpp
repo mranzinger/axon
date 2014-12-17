@@ -182,7 +182,11 @@ bool CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
     if (not l_outbound)
         return false;
 
-    ++(*l_outbound->PendingCount);
+    if (l_outbound->SharedPendingCount)
+    {
+        ++(*l_outbound->SharedPendingCount);
+    }
+    ++l_outbound->PendingCount;
 
     if (not a_message->IsOneWay())
     {
@@ -231,7 +235,11 @@ bool CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
         m_proxyMap.erase(l_iter);
     }
 
-    --(*l_p.Outbound->PendingCount);
+    if (l_p.Outbound->SharedPendingCount)
+    {
+        --(*l_p.Outbound->SharedPendingCount);
+    }
+    --l_p.Outbound->PendingCount;
 
     // Forward the response
     try
@@ -273,7 +281,9 @@ CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient(const CMessage &a_m
             continue;
         }
 
-        int l_pendingCt = *l_c->PendingCount;
+        int l_pendingCt = l_c->PendingCount;
+        if (l_c->SharedPendingCount)
+            l_pendingCt += *l_c->SharedPendingCount;
 
         if (l_best.empty() || l_pendingCt < l_lowestCt)
         {

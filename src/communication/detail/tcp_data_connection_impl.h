@@ -51,7 +51,7 @@ private:
 	mutex m_openLock;
 	condition_variable m_openCV;
 
-	mutex m_sendLock;
+	//mutex m_sendLock;
 
 protected:
 	atomic<size_t> m_procTime;
@@ -109,7 +109,7 @@ inline CTcpDataConnection::Impl::Impl()
 {
 	m_disp = CDispatcher::Get(1);
 
-	auto l_evt = bufferevent_socket_new(m_disp->Base(), -1, BEV_OPT_CLOSE_ON_FREE);
+	auto l_evt = bufferevent_socket_new(m_disp->Base(), -1, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_THREADSAFE);
 	m_evt.reset(l_evt);
 
 	p_HookupEvt();
@@ -222,8 +222,23 @@ inline void CTcpDataConnection::Impl::Send(const CBuffer& a_buff, condition_vari
 
 	int l_ret;
 	{
-	    lock_guard<mutex> l_lock(m_sendLock);
-	    l_ret = bufferevent_write(m_evt.get(), a_buff.data(), a_buff.size());
+	    //lock_guard<mutex> l_lock(m_sendLock);
+
+	    evbuffer *l_output = bufferevent_get_output(m_evt.get());
+
+	    evbuffer_lock(l_output);
+
+	    try
+	    {
+	        l_ret = bufferevent_write(m_evt.get(), a_buff.data(), a_buff.size());
+
+	        evbuffer_unlock(l_output);
+	    }
+	    catch (...)
+	    {
+	        evbuffer_unlock(l_output);
+	        throw;
+	    }
 	}
 
 	if (l_ret != 0)
@@ -251,25 +266,39 @@ inline void CTcpDataConnection::Impl::p_ReadCallback(bufferevent* a_evt)
 
 	bool l_reAlloc = true;
 
-	while (true)
+	evbuffer_lock(l_input);
+
+	try
 	{
-		int l_actual = evbuffer_remove(l_input, l_buff.data(), l_size);
+        while (true)
+        {
+            int l_actual = evbuffer_remove(l_input, l_buff.data(), l_size);
 
-		if (l_actual == 0)
-			break;
 
-		if (l_actual < 0)
-		{
-			cout << "Failed to drain buffer." << endl;
-			break;
-		}
 
-		l_buff.UpdateSize(l_actual);
+            if (l_actual == 0)
+                break;
 
-		m_rcvHandler(move(l_buff));
+            if (l_actual < 0)
+            {
+                cout << "Failed to drain buffer." << endl;
+                break;
+            }
 
-		l_buff.Reset(l_size);
-	};
+            l_buff.UpdateSize(l_actual);
+
+            m_rcvHandler(move(l_buff));
+
+            l_buff.Reset(l_size);
+        }
+
+        evbuffer_unlock(l_input);
+	}
+	catch (...)
+	{
+	    evbuffer_unlock(l_input);
+	    throw;
+	}
 
 	auto l_end = high_resolution_clock::now();
 

@@ -144,7 +144,7 @@ void AddClient(const comm::CAxonProxyServer::Ptr &a_server, const string& a_info
 
     vector<comm::IDataConnection::Ptr> l_conns;
 
-    for (size_t i = 0; i < 8; ++i)
+    for (size_t i = 0; i < 2; ++i)
     {
         auto l_conn = comm::tcp::CTcpDataConnection::Create(l_host, l_port);
 

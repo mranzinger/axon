@@ -25,22 +25,19 @@ struct CProxyConnection
     CAxonClient::Ptr Client;
     std::set<std::string> Contracts;
 
-    TSharedCt PendingCount;
+    TSharedCt SharedPendingCount;
+    std::atomic<int> PendingCount;
 
     CProxyConnection()
     {
-        PendingCount.reset(new std::atomic<int>);
     }
     CProxyConnection(CAxonClient::Ptr a_client)
         : Client(std::move(a_client))
     {
-        PendingCount.reset(new std::atomic<int>);
     }
     CProxyConnection(CAxonClient::Ptr a_client, TSharedCt a_counter)
-        : Client(std::move(a_client)), PendingCount(std::move(a_counter))
+        : Client(std::move(a_client)), SharedPendingCount(std::move(a_counter))
     {
-        if (not PendingCount)
-            PendingCount.reset(new std::atomic<int>);
     }
 };
 

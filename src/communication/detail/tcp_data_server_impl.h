@@ -213,7 +213,7 @@ inline void CTcpDataServer::Impl::Startup(int a_port)
 	l_in.sin_port = htons(a_port);
 
 	m_listener.reset(
-			evconnlistener_new_bind(m_dispatcher->Base(0), s_AcceptCallback, this, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, -1,
+			evconnlistener_new_bind(m_dispatcher->Base(0), s_AcceptCallback, this, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | LEV_OPT_THREADSAFE, -1,
 					(sockaddr*)&l_in, sizeof(l_in))
 	);
 
@@ -294,7 +294,7 @@ inline void CTcpDataServer::Impl::p_AcceptCallback(evconnlistener* a_listener,
 	event_base *l_baseHandler = m_dispatcher->GetNextBase();
 
 	bufferevent_ptr l_evt(
-			bufferevent_socket_new(l_baseHandler, a_sock, BEV_OPT_CLOSE_ON_FREE),
+			bufferevent_socket_new(l_baseHandler, a_sock, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_THREADSAFE),
 			s_FreeBuffEvt
 	);
 

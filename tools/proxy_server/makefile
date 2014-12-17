@@ -3,9 +3,9 @@ AXON_PATH		?= ../..
 LIBEVENT_PATH   ?= $(THIRD_PARTY)/libevent/install
 
 SYMS	 :=
-#SYMS	 += -g
+SYMS	 += -g
 OPTLEVEL :=
-#OPTLEVEL += -O3
+OPTLEVEL += -O3
 
 CC := g++ -std=c++11 $(SYMS) $(OPTLEVEL)
 
