@@ -182,11 +182,7 @@ bool CAxonProxyServer::HandleInboundMessage(InboundClient* a_client,
     if (not l_outbound)
         return false;
 
-    if (l_outbound->SharedPendingCount)
-    {
-        ++(*l_outbound->SharedPendingCount);
-    }
-    ++l_outbound->PendingCount;
+    ++(*l_outbound->SharedPendingCount);
 
     if (not a_message->IsOneWay())
     {
@@ -235,11 +231,7 @@ bool CAxonProxyServer::HandleOutboundMessage(OutboundClient* a_client,
         m_proxyMap.erase(l_iter);
     }
 
-    if (l_p.Outbound->SharedPendingCount)
-    {
-        --(*l_p.Outbound->SharedPendingCount);
-    }
-    --l_p.Outbound->PendingCount;
+    --(*l_p.Outbound->SharedPendingCount);
 
     // Forward the response
     try
@@ -281,9 +273,7 @@ CProxyConnection::Ptr CAxonProxyServer::SelectOutboundClient(const CMessage &a_m
             continue;
         }
 
-        int l_pendingCt = l_c->PendingCount;
-        if (l_c->SharedPendingCount)
-            l_pendingCt += *l_c->SharedPendingCount;
+        int l_pendingCt = *l_c->SharedPendingCount;
 
         if (l_best.empty() || l_pendingCt < l_lowestCt)
         {
@@ -309,7 +299,7 @@ void CAxonProxyServer::AddProxy(IDataConnection::Ptr a_connection)
 
 void CAxonProxyServer::AddProxies(const vector<IDataConnection::Ptr> &a_conns)
 {
-    auto l_counter = make_shared<atomic<int>>();
+    auto l_counter = make_shared<atomic<int>>(0);
 
     for (const IDataConnection::Ptr &l_conn : a_conns)
     {
@@ -383,10 +373,6 @@ void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
 {
     if (a_conn->Contracts.empty())
     {
-        cout << "Finding supported contracts ("
-             << a_conn->Client->ConnectionString()
-             << ")..." << flush;
-
         for (int i = 0; i < 3; ++i)
         {
             try
@@ -399,12 +385,6 @@ void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
                 cout << (i+1) << "..." << endl;
             }
         }
-
-        cout << "done." << endl;
-
-        cout << "Discovered the following contracts:" << endl;
-        for (const string &l_c : a_conn->Contracts)
-            cout << l_c << endl;
     }
 
     for (const string &l_c : a_conn->Contracts)
@@ -415,6 +395,8 @@ void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
 
 void CAxonProxyServer::usAddToDisconnected(CProxyConnection::Ptr a_conn)
 {
+    cout << "The client " << a_conn->Client->ConnectionString() << " has disconnected. Moving to idle." << endl;
+
     auto l_iter = find(begin(m_closedClients), end(m_closedClients), a_conn);
 
     if (l_iter == end(m_closedClients))

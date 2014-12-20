@@ -6,6 +6,7 @@
 
 #include "communication/messaging/axon_client.h"
 #include "communication/timeout_exception.h"
+#include "communication/disconnected_exception.h"
 
 #include <functional>
 #include <assert.h>
@@ -191,7 +192,8 @@ IMessageWaitHandle::Ptr CAxonClient::SendAsync(const CMessage::Ptr& a_message)
 IMessageWaitHandle::Ptr CAxonClient::SendAsync(const CMessage::Ptr& a_message, uint32_t a_timeout)
 {
     if (!m_connection || !m_connection->IsOpen())
-        throw runtime_error("Cannot send data over a dead connection.");
+        throw CDisconnectedException();
+
     // Default timeout is 1 minute
     if (a_timeout == 0)
         a_timeout = 60000;

@@ -10,6 +10,7 @@
 #include <chrono>
 
 #include "communication/tcp/tcp_data_connection.h"
+#include "communication/disconnected_exception.h"
 
 #include "dispatcher.h"
 
@@ -118,15 +119,13 @@ inline CTcpDataConnection::Impl::Impl()
 inline CTcpDataConnection::Impl::Impl(const string& a_connectionString)
 	: Impl()
 {
-	if (!Connect(a_connectionString))
-		throw runtime_error("Unable to connect to the specified endpoint.");
+	Connect(a_connectionString);
 }
 
 inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port)
 	: Impl()
 {
-	if (!Connect(move(a_hostName), a_port))
-		throw runtime_error("Unable to connect to the specified endpoint.");
+	Connect(move(a_hostName), a_port);
 }
 
 inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher)
@@ -219,6 +218,9 @@ inline void CTcpDataConnection::Impl::Send(const CBuffer& a_buff, condition_vari
 {
 	if (a_finishEvt)
 	    throw runtime_error("Signaling the end of the send is not currently supported.");
+
+	if (not IsOpen())
+	    throw CDisconnectedException();
 
 	int l_ret;
 	{

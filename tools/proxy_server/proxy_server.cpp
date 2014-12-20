@@ -144,14 +144,27 @@ void AddClient(const comm::CAxonProxyServer::Ptr &a_server, const string& a_info
 
     vector<comm::IDataConnection::Ptr> l_conns;
 
-    for (size_t i = 0; i < 2; ++i)
+    try
     {
-        auto l_conn = comm::tcp::CTcpDataConnection::Create(l_host, l_port);
+        for (size_t i = 0; i < 8; ++i)
+        {
+            auto l_conn = comm::tcp::CTcpDataConnection::Create(l_host, l_port);
 
-        l_conns.push_back(move(l_conn));
+            l_conns.push_back(move(l_conn));
+        }
+
+        a_server->AddProxies(l_conns);
     }
-
-    a_server->AddProxies(l_conns);
+    catch (exception &ex)
+    {
+        cout << "Failed to add proxy endpoints." << endl
+             << "Error: " << ex.what() << endl;
+    }
+    catch (...)
+    {
+        cout << "Failed to add proxy endpoints." << endl
+             << "Error: unknown" << endl;
+    }
 }
 
 void RemoveClient(const comm::CAxonProxyServer::Ptr &a_server, const string& a_info)
