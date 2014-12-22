@@ -14,6 +14,8 @@
 #include "axon_server.h"
 #include "axon_client.h"
 
+#include "util/timer.h"
+
 namespace axon { namespace communication {
 
 typedef std::shared_ptr<std::atomic<int>> TSharedCt;
@@ -70,17 +72,6 @@ class AXON_COMMUNICATE_API CAxonProxyServer
 
     class private_ctor { };
 
-private:
-    mutable std::mutex m_clientLock;
-    CContractProxyMap m_openClients;
-    CProxyConnectionList m_closedClients;
-    std::mt19937 m_selectRand;
-    //std::vector<CProxyConnection::Ptr> m_openClients;
-    //std::vector<CProxyConnection::Ptr> m_closedClients;
-
-    mutable std::mutex m_mapLock;
-    std::unordered_map<std::string, CProxyPair> m_proxyMap;
-
 public:
     typedef std::shared_ptr<CAxonProxyServer> Ptr;
     typedef std::weak_ptr<CAxonProxyServer> WeakPtr;
@@ -121,6 +112,20 @@ private:
 
     void usAddToOpenClients(CProxyConnection::Ptr a_conn);
     void usAddToDisconnected(CProxyConnection::Ptr a_conn);
+
+    void p_InitTimer();
+    void p_OnTimerTicked();
+
+private:
+    mutable std::mutex m_clientLock;
+    CContractProxyMap m_openClients;
+    CProxyConnectionList m_closedClients;
+    std::mt19937 m_selectRand;
+
+    mutable std::mutex m_mapLock;
+    std::unordered_map<std::string, CProxyPair> m_proxyMap;
+
+    util::Timer m_timer;
 };
 
 } }

@@ -123,7 +123,7 @@ lib/libaxutild.a: $(UTIL_OBJS_D)
 	ar rvs $@ $^
 
 lib/libaxutild.so: $(UTIL_OBJS_D)
-	$(CC) $(DFLAGS) -shared -o $@ $^ $(INCLUDES)
+	$(CC) $(DFLAGS) -shared -o $@ $^ -lrt $(INCLUDES)
 	
 lib/libaxserd.a: $(SER_OBJS_D)
 	ar rvs $@ $^
@@ -149,7 +149,7 @@ lib/libaxutil.a: $(UTIL_OBJS)
 	ar rvs $@ $^
 
 lib/libaxutil.so: $(UTIL_OBJS)
-	$(CC) $(RFLAGS) -shared -o $@ $^ $(INCLUDES)
+	$(CC) $(RFLAGS) -shared -o $@ $^ -lrt $(INCLUDES)
 
 lib/libaxser.a: $(SER_OBJS)
 	ar rvs $@ $^

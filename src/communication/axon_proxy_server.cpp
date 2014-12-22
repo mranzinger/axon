@@ -120,38 +120,50 @@ CAxonProxyServer::Ptr CAxonProxyServer::Create(IDataServer::Ptr a_server,
 
 CAxonProxyServer::CAxonProxyServer(private_ctor)
 {
+    p_InitTimer();
 }
 
 CAxonProxyServer::CAxonProxyServer(
         IProtocolFactory::Ptr a_protoFactory, private_ctor)
     : CAxonServer(move(a_protoFactory))
 {
+    p_InitTimer();
 }
 
 CAxonProxyServer::CAxonProxyServer(
         const std::string& a_hostString, private_ctor)
     : CAxonServer(a_hostString)
 {
+    p_InitTimer();
 }
 
 CAxonProxyServer::CAxonProxyServer(
         IDataServer::Ptr a_server, private_ctor)
     : CAxonServer(move(a_server))
 {
+    p_InitTimer();
 }
 
 CAxonProxyServer::CAxonProxyServer(
         const std::string& a_hostString, IProtocolFactory::Ptr a_protoFactory, private_ctor)
     : CAxonServer(a_hostString, move(a_protoFactory))
 {
+    p_InitTimer();
 }
-
-
 
 CAxonProxyServer::CAxonProxyServer(
         IDataServer::Ptr a_server, IProtocolFactory::Ptr a_protoFactory, private_ctor)
     : CAxonServer(move(a_server), move(a_protoFactory))
 {
+    p_InitTimer();
+}
+
+void CAxonProxyServer::p_InitTimer()
+{
+    m_timer.SetInterval(chrono::milliseconds(10000), false);
+    m_timer.SetCallback(bind(&CAxonProxyServer::p_OnTimerTicked, this));
+
+    m_timer.Start();
 }
 
 CAxonClient::Ptr CAxonProxyServer::CreateClient(IDataConnection::Ptr a_client)
@@ -403,6 +415,30 @@ void CAxonProxyServer::usAddToDisconnected(CProxyConnection::Ptr a_conn)
     {
         m_closedClients.push_back(move(a_conn));
     }
+}
+
+void CAxonProxyServer::p_OnTimerTicked()
+{
+    cout << "The timer ticked" << endl;
+
+    // Create a copy of the closed connection list
+    // so that the client lock doesn't need to be held for the duration
+    // of a potentially long process
+    /*CProxyConnectionList l_closedCopy;
+
+    {
+        lock_guard<mutex> l_lock(m_clientLock);
+        l_closedCopy.insert(end(l_closedCopy),
+                            begin(m_closedClients),
+                            end(m_closedClients));
+    }
+
+    CProxyConnectionList l_opened;*/
+
+
+
+    // Queue the next start
+    m_timer.Start();
 }
 
 } }
