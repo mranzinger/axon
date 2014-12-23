@@ -69,6 +69,7 @@ public:
 
 	virtual void Connect(const std::string &a_connectionString) = 0;
 	virtual void Connect(IDataConnection::Ptr a_connection) = 0;
+	virtual bool Reconnect() = 0;
 	virtual void Close() = 0;
 
 	virtual bool IsOpen() const = 0;

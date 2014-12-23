@@ -143,6 +143,13 @@ void CAxonClient::Connect(IDataConnection::Ptr a_connection)
 	}
 }
 
+bool CAxonClient::Reconnect()
+{
+    if (not m_connection)
+        return false;
+    return m_connection->Reconnect();
+}
+
 void CAxonClient::Close()
 {
     if (m_connection)

@@ -67,6 +67,7 @@ public:
 	virtual std::string ConnectionString() const = 0;
 
 	virtual bool Connect(const std::string &a_connectionString) = 0;
+	virtual bool Reconnect() = 0;
 
 	virtual void Close() = 0;
 

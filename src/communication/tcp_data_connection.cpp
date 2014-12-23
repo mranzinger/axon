@@ -69,6 +69,11 @@ bool CTcpDataConnection::Connect(const std::string& a_connectionString)
 	return m_impl->Connect(a_connectionString);
 }
 
+bool CTcpDataConnection::Reconnect()
+{
+    return m_impl->Reconnect();
+}
+
 void CTcpDataConnection::Close()
 {
 	m_impl->Close();

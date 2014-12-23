@@ -15,6 +15,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
+#include <thread>
+#include <condition_variable>
+#include <atomic>
 
 using namespace std;
 
@@ -38,6 +41,7 @@ public:
 
 private:
     void p_Handler();
+    void p_ThreadProc();
 
     static void p_StaticHandler(sigval_t a_val);
 
@@ -47,10 +51,16 @@ private:
     bool m_recurring;
 
     timer_t m_timer;
+
+    thread m_procThread;
+    condition_variable m_cond;
+    mutex m_lock;
+    atomic<bool> m_ready;
+    atomic<bool> m_kill;
 };
 
 Timer::Impl::Impl()
-    : m_recurring(false)
+    : m_recurring(false), m_ready(false), m_kill(false)
 {
     sigevent sigev;
     memset(&sigev, 0, sizeof(sigev));
@@ -64,6 +74,8 @@ Timer::Impl::Impl()
     {
         throw runtime_error("Failed to create the timer");
     }
+
+    m_procThread = thread(&Impl::p_ThreadProc, this);
 }
 
 Timer::Impl::Impl(c::milliseconds a_interval, bool a_recurring)
@@ -75,6 +87,15 @@ Timer::Impl::Impl(c::milliseconds a_interval, bool a_recurring)
 Timer::Impl::~Impl()
 {
     timer_delete(m_timer);
+
+    {
+        lock_guard<mutex> l_lock(m_lock);
+        m_kill = true;
+    }
+
+    m_cond.notify_all();
+
+    m_procThread.join();
 }
 
 void Timer::Impl::SetInterval(c::milliseconds a_interval,
@@ -128,15 +149,29 @@ void Timer::Impl::Stop()
 
 void Timer::Impl::p_Handler()
 {
-    if (m_handler)
-    {
-        m_handler();
-    }
+    m_cond.notify_all();
 }
 
+void Timer::Impl::p_ThreadProc()
+{
+    while (not m_kill)
+    {
+        {
+            unique_lock<mutex> l_lock(m_lock);
 
+            m_cond.wait(l_lock,
+                    [this] () -> bool
+                    {
+                        return m_ready or m_kill;
+                    });
+        }
 
-
+        if (not m_kill && m_handler)
+        {
+            m_handler();
+        }
+    }
+}
 
 void Timer::Impl::p_StaticHandler(sigval_t a_val)
 {

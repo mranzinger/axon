@@ -105,6 +105,8 @@ private:
 
     CProxyConnection::Ptr SelectOutboundClient(const CMessage &a_message);
 
+    bool EstablishContracts(CProxyConnection &a_conn);
+
     void usRemoveProxy(CContractProxyMap &a_conns,
                        const std::string &a_connectionString);
     void usRemoveProxy(CProxyConnectionList &a_conns,

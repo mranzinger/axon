@@ -49,8 +49,10 @@ private:
 	//condition_variable *m_var;
 
 	atomic<bool> m_open;
-	mutex m_openLock;
-	condition_variable m_openCV;
+	atomic<bool> m_error;
+	atomic<bool> m_connecting;
+	recursive_mutex m_openLock;
+	condition_variable_any m_openCV;
 
 	//mutex m_sendLock;
 
@@ -68,6 +70,7 @@ public:
 	string ConnectionString() const;
 	virtual bool Connect(string a_hostName, int a_port);
 	virtual bool Connect(const string &a_connectionString);
+	virtual bool Reconnect();
 	virtual void Close();
 	bool IsOpen() const;
 	virtual bool IsServerClient() const { return false; }
@@ -92,6 +95,7 @@ protected:
 
 
 private:
+	void p_ResetEvt();
 	void p_WriteCallback(bufferevent *a_evt);
 	void p_ReadCallback(bufferevent *a_evt);
 	void p_EventCallback(bufferevent *a_evt, short a_flags);
@@ -106,14 +110,11 @@ private:
 
 
 inline CTcpDataConnection::Impl::Impl()
-	: m_port(-1), m_open(false), m_evt(nullptr, s_FreeBuffEvt), m_procTime(0)
+	: m_port(-1), m_open(false), m_connecting(false), m_error(false), m_evt(nullptr, s_FreeBuffEvt), m_procTime(0)
 {
 	m_disp = CDispatcher::Get(1);
 
-	auto l_evt = bufferevent_socket_new(m_disp->Base(), -1, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_THREADSAFE);
-	m_evt.reset(l_evt);
-
-	p_HookupEvt();
+	//p_ResetEvt();
 }
 
 inline CTcpDataConnection::Impl::Impl(const string& a_connectionString)
@@ -129,7 +130,8 @@ inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port)
 }
 
 inline CTcpDataConnection::Impl::Impl(string a_hostName, int a_port, CDispatcher::Ptr a_dispatcher)
-	: m_port(a_port), m_open(true), m_hostName(move(a_hostName)), m_evt(nullptr, s_FreeBuffEvt),
+	: m_port(a_port), m_open(true), m_connecting(false), m_error(false), m_hostName(move(a_hostName)),
+	  m_evt(nullptr, s_FreeBuffEvt),
 	  m_disp(move(a_dispatcher)), m_procTime(0)
 {
 }
@@ -146,14 +148,28 @@ inline void CTcpDataConnection::Impl::p_SetBufferEvent(bufferevent_ptr a_evt)
 	p_HookupEvt();
 }
 
+inline void CTcpDataConnection::Impl::p_ResetEvt()
+{
+    auto l_evt = bufferevent_socket_new(m_disp->Base(), -1, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_THREADSAFE);
+    m_evt.reset(l_evt);
+
+    p_HookupEvt();
+}
+
 inline void CTcpDataConnection::Impl::p_HookupEvt()
 {
+    if (not m_evt)
+        return;
+
 	bufferevent_setcb(m_evt.get(), s_ReadCallback, s_WriteCallback, s_EventCallback, this);
 	bufferevent_enable(m_evt.get(), EV_READ|EV_WRITE);
 }
 
 inline void CTcpDataConnection::Impl::p_UnhookEvt()
 {
+    if (not m_evt)
+        return;
+
     bufferevent_disable(m_evt.get(), EV_READ|EV_WRITE);
     bufferevent_setcb(m_evt.get(), nullptr, nullptr, nullptr, nullptr);
 }
@@ -179,39 +195,87 @@ inline bool CTcpDataConnection::Impl::Connect(const string& a_connectionString)
 
 inline bool CTcpDataConnection::Impl::Connect(string a_hostName, int a_port)
 {
-	unique_lock<mutex> l_lock(m_openLock);
-
-	int l_err = bufferevent_socket_connect_hostname(m_evt.get(), m_disp->Dns(),
-			AF_UNSPEC, a_hostName.c_str(), a_port);
-
-	if (l_err)
-		return false;
-
-	// Wait for up to 10 seconds for the connection to open
-	bool l_conn =
-			m_openCV.wait_for(l_lock, chrono::seconds(10),
-					[this] () -> bool
-					{
-						return m_open;
-					});
-
-	if (!l_conn)
-		return false;
+	unique_lock<recursive_mutex> l_lock(m_openLock);
 
 	m_hostName = move(a_hostName);
-	m_port = a_port;
+    m_port = a_port;
 
-	return true;
+	if (not m_connecting)
+	{
+	    m_connecting = true;
+	    m_error = false;
+
+	    p_ResetEvt();
+
+	    int l_err = bufferevent_socket_connect_hostname(m_evt.get(), m_disp->Dns(),
+            AF_UNSPEC, a_hostName.c_str(), a_port);
+
+	    if (l_err)
+	    {
+	        m_connecting = false;
+	        return false;
+	    }
+	}
+
+	// There is apparently a condition in which the connect method will not be invoked
+	// in a separate thread, which means that the status will be updated during the call
+	// to connect. In this case, we definitely do not want to wait for the condition
+	// because it was signalled before even reaching this point
+	if (m_connecting)
+	{
+	    // Wait for up to 10 seconds for the connection to open
+	    /*cv_status l_status = m_openCV.wait(l_lock, chrono::seconds(10));
+
+	    if (l_status == cv_status::timeout)
+	        return false;*/
+	    m_openCV.wait(l_lock);
+	}
+
+	return m_open;
+}
+
+inline bool CTcpDataConnection::Impl::Reconnect()
+{
+    if (m_open)
+    {
+        Close();
+    }
+
+    return Connect(m_hostName, m_port);
 }
 
 inline void CTcpDataConnection::Impl::Close()
 {
 	m_open = false;
+
+	/*bufferevent_free(m_evt.get());
+	m_evt.reset();
+
+	p_ResetEvt();*/
+
+	/*int fd = bufferevent_getfd(m_evt.get());
+
+	if (fd < 0)
+	    return;
+
+	int err = evutil_closesocket(fd);
+	if (err != 0)
+	{
+	    auto err = evutil_socket_geterror(fd);
+
+	    auto str = evutil_socket_error_to_string(err);
+
+	    cerr << "Failed to close the socket for "
+	         << ConnectionString()
+	         << ". Error (" << err << "): " << str << endl;
+	}*/
 }
+
+
 
 inline bool CTcpDataConnection::Impl::IsOpen() const
 {
-	return m_open;
+	return m_open && m_evt;
 }
 
 inline void CTcpDataConnection::Impl::Send(const CBuffer& a_buff, condition_variable* a_finishEvt)
@@ -313,15 +377,13 @@ inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short 
 
 	if (a_flags & BEV_EVENT_CONNECTED)
 	{
-	    {
-	        lock_guard<mutex> l_lock(m_openLock);
+	    if (not m_error)
 	        m_open = true;
-	    }
-        m_openCV.notify_all();
 	}
 	else if (a_flags & BEV_EVENT_ERROR)
 	{
 		l_close = true;
+		m_error = true;
 		cout << "Error on connection" << endl;
 	}
 	else if (a_flags & BEV_EVENT_EOF)
@@ -330,10 +392,18 @@ inline void CTcpDataConnection::Impl::p_EventCallback(bufferevent* a_evt, short 
 		cout << "Client Closed." << endl;
 	}
 
-	if (l_close)
 	{
-		Close();
+	    // Grab this just to prevent a race condition
+	    lock_guard<recursive_mutex> l_lock(m_openLock);
+	    m_connecting = false;
 	}
+
+	m_openCV.notify_all();
+
+	if (l_close)
+    {
+        Close();
+    }
 }
 
 inline void CTcpDataConnection::Impl::UpdateProcTime(const dirus& a_dur)

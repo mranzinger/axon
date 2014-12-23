@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+#include "communication/disconnected_exception.h"
+
 using namespace std;
 
 namespace axon { namespace communication {
@@ -321,12 +323,16 @@ void CAxonProxyServer::AddProxies(const vector<IDataConnection::Ptr> &a_conns)
                 CreateProtocol()
         );
 
+        auto l_proxyConn = make_shared<CProxyConnection>(move(l_client), l_counter);
+
+        bool l_good = EstablishContracts(*l_proxyConn);
+
         lock_guard<mutex> l_lock(m_clientLock);
 
-        if (l_client->IsOpen())
-            usAddToOpenClients(make_shared<CProxyConnection>(move(l_client), l_counter));
+        if (l_good)
+            usAddToOpenClients(move(l_proxyConn));
         else
-            usAddToDisconnected(make_shared<CProxyConnection>(move(l_client), l_counter));
+            usAddToDisconnected(move(l_proxyConn));
     }
 }
 
@@ -381,23 +387,41 @@ set<string> CAxonProxyServer::QueryContracts() const
     return move(l_ret);
 }
 
-void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
+bool CAxonProxyServer::EstablishContracts(CProxyConnection& a_conn)
 {
-    if (a_conn->Contracts.empty())
+    if (not a_conn.Contracts.empty())
+        return true;
+    if (not a_conn.Client->IsOpen())
+        return false;
+
+    for (int i = 0; i < 3; ++i)
     {
-        for (int i = 0; i < 3; ++i)
+        try
         {
-            try
-            {
-                a_conn->Contracts = a_conn->Client->Send(QUERY_CONTRACTS_CONTRACT, 1000);
-                break;
-            }
-            catch (CTimeoutException)
-            {
-                cout << (i+1) << "..." << endl;
-            }
+            a_conn.Contracts = a_conn.Client->Send(QUERY_CONTRACTS_CONTRACT, 1000);
+            return true;
+        }
+        catch (CDisconnectedException)
+        {
+            return false;
+        }
+        catch (CTimeoutException)
+        {
+            cout << (i+1) << "..." << endl;
+        }
+        catch (...)
+        {
+            return false;
         }
     }
+
+    return false;
+}
+
+void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
+{
+    if (not a_conn)
+        return;
 
     for (const string &l_c : a_conn->Contracts)
     {
@@ -407,24 +431,27 @@ void CAxonProxyServer::usAddToOpenClients(CProxyConnection::Ptr a_conn)
 
 void CAxonProxyServer::usAddToDisconnected(CProxyConnection::Ptr a_conn)
 {
-    cout << "The client " << a_conn->Client->ConnectionString() << " has disconnected. Moving to idle." << endl;
+    if (not a_conn)
+        return;
 
     auto l_iter = find(begin(m_closedClients), end(m_closedClients), a_conn);
 
     if (l_iter == end(m_closedClients))
     {
+        cout << "The client " << a_conn->Client->ConnectionString() << " has disconnected. Moving to idle." << endl;
+
         m_closedClients.push_back(move(a_conn));
     }
 }
 
+
+
 void CAxonProxyServer::p_OnTimerTicked()
 {
-    cout << "The timer ticked" << endl;
-
     // Create a copy of the closed connection list
     // so that the client lock doesn't need to be held for the duration
     // of a potentially long process
-    /*CProxyConnectionList l_closedCopy;
+    CProxyConnectionList l_closedCopy;
 
     {
         lock_guard<mutex> l_lock(m_clientLock);
@@ -433,9 +460,61 @@ void CAxonProxyServer::p_OnTimerTicked()
                             end(m_closedClients));
     }
 
-    CProxyConnectionList l_opened;*/
+    CProxyConnectionList l_opened;
 
+    for (const CProxyConnection::Ptr &l_conn : l_closedCopy)
+    {
+        try
+        {
+            if (l_conn->Client->Reconnect())
+            {
+                cout << "Re-established connection with "
+                     << l_conn->Client->ConnectionString()
+                     << endl;
 
+                if (EstablishContracts(*l_conn))
+                {
+                    l_opened.push_back(l_conn);
+                }
+            }
+        }
+        catch (CDisconnectedException &)
+        {
+            // Don't care
+        }
+        catch (exception &ex)
+        {
+            cerr << "Failed to re-establish connection to '"
+                 << l_conn->Client->ConnectionString()
+                 << "' because of the error: "
+                 << ex.what()
+                 << endl;
+        }
+        catch (...)
+        {
+            cerr << "Failed to re-establish connection to '"
+                 << l_conn->Client->ConnectionString()
+                 << "' because of an unknown error."
+                 << endl;
+        }
+    }
+
+    if (not l_opened.empty())
+    {
+        lock_guard<mutex> l_lock(m_clientLock);
+
+        for (CProxyConnection::Ptr &l_conn : l_opened)
+        {
+            m_closedClients.erase(
+                    find(begin(m_closedClients),
+                         end(m_closedClients),
+                         l_conn
+                    )
+            );
+
+            usAddToOpenClients(move(l_conn));
+        }
+    }
 
     // Queue the next start
     m_timer.Start();

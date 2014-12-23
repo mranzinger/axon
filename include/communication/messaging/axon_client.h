@@ -51,6 +51,7 @@ public:
 
 	virtual void Connect(const std::string &a_connectionString) override;
 	virtual void Connect(IDataConnection::Ptr a_connection) override;
+	virtual bool Reconnect() override;
 	virtual void Close() override;
 
 	virtual bool IsOpen() const override { return m_connection->IsOpen(); }

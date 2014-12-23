@@ -39,7 +39,8 @@ public:
 	virtual std::string ConnectionString() const;
 
 	bool Connect(std::string a_hostName, int a_port);
-	virtual bool Connect(const std::string &a_connectionString);
+	virtual bool Connect(const std::string &a_connectionString) override;
+	virtual bool Reconnect() override;
 
 	virtual void Close();
 
