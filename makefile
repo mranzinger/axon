@@ -78,6 +78,7 @@ setup:
 	mkdir -p $(OBJ_UTIL)
 	mkdir -p $(OBJ_SER)
 	mkdir -p $(OBJ_COMM)
+	$(MAKE) -C thirdparty/pugixml/src all
 
 $(OBJ_UTIL)/%.od: $(SRC_UTIL)/%.cpp
 	$(CC) $(DFLAGS) -c $< $(INCLUDES) -o $@ 
