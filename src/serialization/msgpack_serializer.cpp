@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <endian.h>
 
+#include "serialization/format/binary_format_common.h"
+
 using namespace std;
 
 typedef unsigned char byte;
@@ -78,13 +80,19 @@ struct value_writer_t<T, true>
 {
     static_assert(is_trivial<T>::value, "The value to be written must be trivial.");
 
-    static void WriteValue(char *&a_buff, const T &a_val)
+    static void WriteValue(char *&a_buff, const T &a_val, const char *a_endBuff)
     {
-        memcpy(a_buff, &a_val, sizeof(T));
-        a_buff += sizeof(T);
+        if (a_buff + sizeof(a_val) > a_endBuff)
+            throw CBufferOverflowException();
+
+        memcpy(a_buff, &a_val, sizeof(a_val));
+        a_buff += sizeof(a_val);
     }
-    static void ReadValue(const char *&a_buff, T &a_val)
+    static void ReadValue(const char *&a_buff, T &a_val, const char *a_endBuff)
     {
+        if (a_buff + sizeof(a_val) > a_endBuff)
+            throw CBufferOverflowException();
+
         memcpy(&a_val, a_buff, sizeof(a_val));
         a_buff += sizeof(a_val);
     }
@@ -98,15 +106,21 @@ struct value_writer_t<T, false>
     template<size_t Size>
     struct re
     {
-        static void WriteValue(char *&a_buff, const T &a_val)
+        static void WriteValue(char *&a_buff, const T &a_val, const char *a_endBuff)
         {
+            if (a_buff + sizeof(T) > a_endBuff)
+                throw CBufferOverflowException();
+
             auto l_buff = (const char *)&a_val;
 
             Go(l_buff, a_buff);
             a_buff += sizeof(T);
         }
-        static void ReadValue(const char *&a_buff, T &a_val)
+        static void ReadValue(const char *&a_buff, T &a_val, const char *a_endBuff)
         {
+            if (a_buff + sizeof(T) > a_endBuff)
+                throw CBufferOverflowException();
+
             auto l_buff = (char *)&a_val;
 
             Go(a_buff, l_buff);
@@ -123,13 +137,13 @@ struct value_writer_t<T, false>
         }
     };
 
-    static void WriteValue(char *&a_buff, const T &a_val)
+    static void WriteValue(char *&a_buff, const T &a_val, const char *a_endBuff)
     {
-        re<sizeof(T)>::WriteValue(a_buff, a_val);
+        re<sizeof(T)>::WriteValue(a_buff, a_val, a_endBuff);
     }
-    static void ReadValue(const char *&a_buff, T &a_val)
+    static void ReadValue(const char *&a_buff, T &a_val, const char *a_endBuff)
     {
-        re<sizeof(T)>::ReadValue(a_buff, a_val);
+        re<sizeof(T)>::ReadValue(a_buff, a_val, a_endBuff);
     }
 };
 
@@ -138,22 +152,22 @@ struct value_writer
     : value_writer_t<T, IS_BIG_ENDIAN> { };
 
 template<typename T>
-void WriteValue(char *&a_buff, const T &a_val)
+void WriteValue(char *&a_buff, const T &a_val, const char *a_endBuff)
 {
-    value_writer<T>::WriteValue(a_buff, a_val);
+    value_writer<T>::WriteValue(a_buff, a_val, a_endBuff);
 }
 
 template<typename T>
-void ReadValue(const char *&a_buff, T &a_val)
+void ReadValue(const char *&a_buff, T &a_val, const char *a_endBuff)
 {
-    value_writer<T>::ReadValue(a_buff, a_val);
+    value_writer<T>::ReadValue(a_buff, a_val, a_endBuff);
 }
 
 template<typename T>
-T ReadValue(const char *&a_buff)
+T ReadValue(const char *&a_buff, const char *a_endBuff)
 {
     T l_val;
-    ReadValue(a_buff, l_val);
+    ReadValue(a_buff, l_val, a_endBuff);
     return l_val;
 }
 
@@ -165,10 +179,10 @@ struct float_helper_tt
         return sizeof(byte) + sizeof(FloatType);
     }
 
-    static void Encode(char *&a_buff, FloatType val)
+    static void Encode(char *&a_buff, FloatType val, const char *a_endBuff)
     {
-        WriteValue(a_buff, Code);
-        WriteValue(a_buff, val);
+        WriteValue(a_buff, Code, a_endBuff);
+        WriteValue(a_buff, val, a_endBuff);
     }
 };
 
@@ -220,7 +234,7 @@ struct int_helper_t<IntType, true>
         }
     }
 
-    static void Encode(char *&a_buff, IntType val)
+    static void Encode(char *&a_buff, IntType val, const char *a_endBuff)
     {
         if (val < 0)
         {
@@ -228,32 +242,32 @@ struct int_helper_t<IntType, true>
 
             if (v2 <= IntType(0x1f))
             {
-                WriteValue<uint8_t>(a_buff, NEG_FIX_INT | (int8_t(val) & 0x1f));
+                WriteValue<uint8_t>(a_buff, NEG_FIX_INT | (int8_t(val) & 0x1f), a_endBuff);
             }
             else if (v2 <= IntType(0x7f))
             {
-                WriteValue(a_buff, INT_8);
-                WriteValue(a_buff, int8_t(val));
+                WriteValue(a_buff, INT_8, a_endBuff);
+                WriteValue(a_buff, int8_t(val), a_endBuff);
             }
             else if (v2 <= IntType(0x7fff))
             {
-                WriteValue(a_buff, INT_16);
-                WriteValue(a_buff, int16_t(val));
+                WriteValue(a_buff, INT_16, a_endBuff);
+                WriteValue(a_buff, int16_t(val), a_endBuff);
             }
             else if (v2 <= IntType(0x7fffffff))
             {
-                WriteValue(a_buff, INT_32);
-                WriteValue(a_buff, int32_t(val));
+                WriteValue(a_buff, INT_32, a_endBuff);
+                WriteValue(a_buff, int32_t(val), a_endBuff);
             }
             else
             {
-                WriteValue(a_buff, INT_64);
-                WriteValue(a_buff, int64_t(val));
+                WriteValue(a_buff, INT_64, a_endBuff);
+                WriteValue(a_buff, int64_t(val), a_endBuff);
             }
         }
         else
         {
-            int_helper_t<IntType, false>::Encode(a_buff, val);
+            int_helper_t<IntType, false>::Encode(a_buff, val, a_endBuff);
         }
     }
 };
@@ -283,31 +297,31 @@ struct int_helper_t<IntType, false>
         return 9 * sizeof(byte);
     }
 
-    static void Encode(char *&a_buff, IntType val)
+    static void Encode(char *&a_buff, IntType val, const char *a_endBuff)
     {
         if (val <= IntType(0x7f))
         {
-            WriteValue<uint8_t>(a_buff, POS_FIX_INT | byte(val));
+            WriteValue<uint8_t>(a_buff, POS_FIX_INT | byte(val), a_endBuff);
         }
         else if (val <= IntType(0xff))
         {
-            WriteValue(a_buff, UINT_8);
-            WriteValue(a_buff, byte(val));
+            WriteValue(a_buff, UINT_8, a_endBuff);
+            WriteValue(a_buff, byte(val), a_endBuff);
         }
         else if (val <= IntType(0xffff))
         {
-            WriteValue(a_buff, UINT_16);
-            WriteValue(a_buff, uint16_t(val));
+            WriteValue(a_buff, UINT_16, a_endBuff);
+            WriteValue(a_buff, uint16_t(val), a_endBuff);
         }
         else if (val <= IntType(0xffffffff))
         {
-            WriteValue(a_buff, UINT_32);
-            WriteValue(a_buff, uint32_t(val));
+            WriteValue(a_buff, UINT_32, a_endBuff);
+            WriteValue(a_buff, uint32_t(val), a_endBuff);
         }
         else
         {
-            WriteValue(a_buff, UINT_64);
-            WriteValue(a_buff, uint64_t(val));
+            WriteValue(a_buff, UINT_64, a_endBuff);
+            WriteValue(a_buff, uint64_t(val), a_endBuff);
         }
     }
 
@@ -330,9 +344,9 @@ struct prim_helper<bool>
 {
     static size_t CalcSize(bool) { return 1; }
 
-    static void Encode(char *&a_buff, bool v)
+    static void Encode(char *&a_buff, bool v, const char *a_endBuff)
     {
-        WriteValue(a_buff, v ? TRUE : FALSE);
+        WriteValue(a_buff, v ? TRUE : FALSE, a_endBuff);
     }
 };
 
@@ -360,8 +374,11 @@ inline size_t CalcRawSize(size_t len)
     }
 }
 
-inline void WriteRawBytes(char *&a_opBuff, const char *a_ipBuff, size_t a_len)
+inline void WriteRawBytes(char *&a_opBuff, const char *a_ipBuff, size_t a_len, const char *a_endBuff)
 {
+    if (a_opBuff + a_len > a_endBuff)
+        throw CBufferOverflowException();
+
     memcpy(a_opBuff, a_ipBuff, a_len);
     a_opBuff += a_len;
 }
@@ -374,29 +391,29 @@ struct prim_helper<string>
         return CalcRawSize(a_val.size());
     }
 
-    static void Encode(char *&a_buff, const string &a_val)
+    static void Encode(char *&a_buff, const string &a_val, const char *a_endBuff)
     {
         if (a_val.size() <= 0x1f)
         {
-            WriteValue<uint8_t>(a_buff, FIX_STR | byte(a_val.size()));
+            WriteValue<uint8_t>(a_buff, FIX_STR | byte(a_val.size()), a_endBuff);
         }
         else if (a_val.size() <= 0xff)
         {
-            WriteValue(a_buff, STR_8);
-            WriteValue<uint8_t>(a_buff, a_val.size());
+            WriteValue(a_buff, STR_8, a_endBuff);
+            WriteValue<uint8_t>(a_buff, a_val.size(), a_endBuff);
         }
         else if (a_val.size() <= 0xffff)
         {
-            WriteValue(a_buff, STR_16);
-            WriteValue<uint16_t>(a_buff, a_val.size());
+            WriteValue(a_buff, STR_16, a_endBuff);
+            WriteValue<uint16_t>(a_buff, a_val.size(), a_endBuff);
         }
         else
         {
-            WriteValue(a_buff, STR_32);
-            WriteValue<uint32_t>(a_buff, a_val.size());
+            WriteValue(a_buff, STR_32, a_endBuff);
+            WriteValue<uint32_t>(a_buff, a_val.size(), a_endBuff);
         }
 
-        WriteRawBytes(a_buff, a_val.c_str(), a_val.size());
+        WriteRawBytes(a_buff, a_val.c_str(), a_val.size(), a_endBuff);
     }
 };
 
@@ -408,9 +425,9 @@ size_t CalcSize(const T &a_val)
 }
 
 template<typename T>
-void WritePrimitive(char *&a_buff, const T &a_val)
+void WritePrimitive(char *&a_buff, const T &a_val, const char *a_endBuff)
 {
-    prim_helper<T>::Encode(a_buff, a_val);
+    prim_helper<T>::Encode(a_buff, a_val, a_endBuff);
 }
 
 size_t CalcStructSize(const CStructData &a_data);
@@ -461,16 +478,16 @@ inline size_t CalcDataSize(const AData &a_data)
 #undef PRIM_SIZE
 }
 
-void WriteStruct(char *&a_buff, const CStructData &a_data);
-void WriteArray(char *&a_buff, const CArrayData &a_data);
-void WriteBuffer(char *&a_buff, const CBufferData &a_data);
-void WritePrimArray(char *&a_buff, const APrimArrayDataBase &a_data);
+void WriteStruct(char *&a_buff, const CStructData &a_data, const char *a_endBuff);
+void WriteArray(char *&a_buff, const CArrayData &a_data, const char *a_endBuff);
+void WriteBuffer(char *&a_buff, const CBufferData &a_data, const char *a_endBuff);
+void WritePrimArray(char *&a_buff, const APrimArrayDataBase &a_data, const char *a_endBuff);
 
-inline void WriteData(char *&a_buff, const AData &a_data)
+inline void WriteData(char *&a_buff, const AData &a_data, const char *a_endBuff)
 {
 #define WRITE_PRIM(name, type) \
     case DataType::name: \
-        WritePrimitive(a_buff, static_cast<const CPrimData<type> &>(a_data).GetValue()); \
+        WritePrimitive(a_buff, static_cast<const CPrimData<type> &>(a_data).GetValue(), a_endBuff); \
         break
 
     switch (a_data.Type())
@@ -489,23 +506,23 @@ inline void WriteData(char *&a_buff, const AData &a_data)
     WRITE_PRIM(String, string);
 
     case DataType::Null:
-        WriteValue(a_buff, NIL);
+        WriteValue(a_buff, NIL, a_endBuff);
         break;
 
     case DataType::Struct:
-        WriteStruct(a_buff, static_cast<const CStructData &>(a_data));
+        WriteStruct(a_buff, static_cast<const CStructData &>(a_data), a_endBuff);
         break;
 
     case DataType::Array:
-        WriteArray(a_buff, static_cast<const CArrayData &>(a_data));
+        WriteArray(a_buff, static_cast<const CArrayData &>(a_data), a_endBuff);
         break;
 
     case DataType::Buffer:
-        WriteBuffer(a_buff, static_cast<const CBufferData &>(a_data));
+        WriteBuffer(a_buff, static_cast<const CBufferData &>(a_data), a_endBuff);
         break;
 
     case DataType::PrimArray:
-        WritePrimArray(a_buff, static_cast<const APrimArrayDataBase &>(a_data));
+        WritePrimArray(a_buff, static_cast<const APrimArrayDataBase &>(a_data), a_endBuff);
         break;
 
     default:
@@ -516,16 +533,17 @@ inline void WriteData(char *&a_buff, const AData &a_data)
 }
 
 AData::Ptr ReadString(const char *&a_buff, byte a_type, const CSerializationContext &a_context,
-                      size_t a_length = SIZE_MAX);
+                      size_t a_length, const char *a_endBuff);
 AData::Ptr ReadArray(const char *&a_buff, byte a_type, const CSerializationContext &a_context,
-                     size_t a_length = SIZE_MAX);
+                     size_t a_length, const char *a_endBuff);
 AData::Ptr ReadStruct(const char *&a_buff, byte a_type, const CSerializationContext &a_context,
-                      size_t a_length = SIZE_MAX);
-AData::Ptr ReadBuffer(const char *&a_buff, byte a_type, const CSerializationContext &a_context);
+                      size_t a_length, const char *a_endBuff);
+AData::Ptr ReadBuffer(const char *&a_buff, byte a_type, const CSerializationContext &a_context,
+                      const char *a_endBuff);
 
-inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_context)
+inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_context, const char *a_endBuff)
 {
-    auto l_type = ReadValue<byte>(a_buff);
+    auto l_type = ReadValue<byte>(a_buff, a_endBuff);
 
     if ((l_type & 0x80) == 0)
     {
@@ -539,17 +557,17 @@ inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_c
     else if ((l_type & 0xe0) == FIX_STR)
     {
         size_t l_len = l_type & ~FIX_STR;
-        return ReadString(a_buff, FIX_STR, a_context, l_len);
+        return ReadString(a_buff, FIX_STR, a_context, l_len, a_endBuff);
     }
     else if ((l_type & 0xf0) == FIX_ARRAY)
     {
         size_t l_len = l_type & ~FIX_ARRAY;
-        return ReadArray(a_buff, FIX_ARRAY, a_context, l_len);
+        return ReadArray(a_buff, FIX_ARRAY, a_context, l_len, a_endBuff);
     }
     else if ((l_type & 0xf0) == FIX_MAP)
     {
         size_t l_len = l_type & ~FIX_MAP;
-        return ReadStruct(a_buff, FIX_MAP, a_context, l_len);
+        return ReadStruct(a_buff, FIX_MAP, a_context, l_len, a_endBuff);
     }
 
     switch (l_type)
@@ -563,47 +581,47 @@ inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_c
         return MakePrim(false, a_context);
 
     case UINT_8:
-        return MakePrim(ReadValue<uint8_t>(a_buff), a_context);
+        return MakePrim(ReadValue<uint8_t>(a_buff, a_endBuff), a_context);
     case INT_8:
-        return MakePrim(ReadValue<int8_t>(a_buff), a_context);
+        return MakePrim(ReadValue<int8_t>(a_buff, a_endBuff), a_context);
 
     case UINT_16:
-        return MakePrim(ReadValue<uint16_t>(a_buff), a_context);
+        return MakePrim(ReadValue<uint16_t>(a_buff, a_endBuff), a_context);
     case INT_16:
-        return MakePrim(ReadValue<int16_t>(a_buff), a_context);
+        return MakePrim(ReadValue<int16_t>(a_buff, a_endBuff), a_context);
 
     case UINT_32:
-        return MakePrim(ReadValue<uint32_t>(a_buff), a_context);
+        return MakePrim(ReadValue<uint32_t>(a_buff, a_endBuff), a_context);
     case INT_32:
-        return MakePrim(ReadValue<int32_t>(a_buff), a_context);
+        return MakePrim(ReadValue<int32_t>(a_buff, a_endBuff), a_context);
 
     case UINT_64:
-        return MakePrim(ReadValue<uint64_t>(a_buff), a_context);
+        return MakePrim(ReadValue<uint64_t>(a_buff, a_endBuff), a_context);
     case INT_64:
-        return MakePrim(ReadValue<int64_t>(a_buff), a_context);
+        return MakePrim(ReadValue<int64_t>(a_buff, a_endBuff), a_context);
 
     case FLOAT_32:
-        return MakePrim(ReadValue<float>(a_buff), a_context);
+        return MakePrim(ReadValue<float>(a_buff, a_endBuff), a_context);
     case FLOAT_64:
-        return MakePrim(ReadValue<double>(a_buff), a_context);
+        return MakePrim(ReadValue<double>(a_buff, a_endBuff), a_context);
 
     case STR_8:
     case STR_16:
     case STR_32:
-        return ReadString(a_buff, l_type, a_context);
+        return ReadString(a_buff, l_type, a_context, SIZE_MAX, a_endBuff);
 
     case BIN_8:
     case BIN_16:
     case BIN_32:
-        return ReadBuffer(a_buff, l_type, a_context);
+        return ReadBuffer(a_buff, l_type, a_context, a_endBuff);
 
     case ARR_16:
     case ARR_32:
-        return ReadArray(a_buff, l_type, a_context);
+        return ReadArray(a_buff, l_type, a_context, SIZE_MAX, a_endBuff);
 
     case MAP_16:
     case MAP_32:
-        return ReadStruct(a_buff, l_type, a_context);
+        return ReadStruct(a_buff, l_type, a_context, SIZE_MAX, a_endBuff);
 
     default:
         throw runtime_error("Unsupported format type '" +
@@ -614,20 +632,20 @@ inline AData::Ptr ReadData(const char *&a_buff, const CSerializationContext &a_c
 
 inline AData::Ptr ReadString(const char *&a_buff, byte a_type,
                              const CSerializationContext &a_context,
-                             size_t a_length)
+                             size_t a_length, const char *a_endBuff)
 {
     if (a_length == SIZE_MAX)
     {
         switch (a_type)
         {
         case STR_8:
-            a_length = ReadValue<uint8_t>(a_buff);
+            a_length = ReadValue<uint8_t>(a_buff, a_endBuff);
             break;
         case STR_16:
-            a_length = ReadValue<uint16_t>(a_buff);
+            a_length = ReadValue<uint16_t>(a_buff, a_endBuff);
             break;
         case STR_32:
-            a_length = ReadValue<uint32_t>(a_buff);
+            a_length = ReadValue<uint32_t>(a_buff, a_endBuff);
             break;
         default:
             throw runtime_error("Unsupported string type '" +
@@ -672,43 +690,43 @@ inline size_t CalcStructSize(const CStructData &a_data)
     return len;
 }
 
-inline void WriteStruct(char *&a_buff, const CStructData &a_data)
+inline void WriteStruct(char *&a_buff, const CStructData &a_data, const char *a_endBuff)
 {
     if (a_data.size() <= 0xf)
     {
-        WriteValue<byte>(a_buff, FIX_MAP | byte(a_data.size()));
+        WriteValue<byte>(a_buff, FIX_MAP | byte(a_data.size()), a_endBuff);
     }
     else if (a_data.size() <= 0xffff)
     {
-        WriteValue(a_buff, MAP_16);
-        WriteValue<uint16_t>(a_buff, a_data.size());
+        WriteValue(a_buff, MAP_16, a_endBuff);
+        WriteValue<uint16_t>(a_buff, a_data.size(), a_endBuff);
     }
     else
     {
-        WriteValue(a_buff, MAP_32);
-        WriteValue<uint32_t>(a_buff, a_data.size());
+        WriteValue(a_buff, MAP_32, a_endBuff);
+        WriteValue<uint32_t>(a_buff, a_data.size(), a_endBuff);
     }
 
     for (const CStructData::TProp &l_prop : a_data)
     {
-        WritePrimitive(a_buff, l_prop.first);
-        WriteData(a_buff, *l_prop.second);
+        WritePrimitive(a_buff, l_prop.first, a_endBuff);
+        WriteData(a_buff, *l_prop.second, a_endBuff);
     }
 }
 
 inline AData::Ptr ReadStruct(const char *&a_buff, byte a_type,
                              const CSerializationContext &a_context,
-                             size_t a_length)
+                             size_t a_length, const char *a_endBuff)
 {
     if (a_length == SIZE_MAX)
     {
         switch (a_type)
         {
         case MAP_16:
-            a_length = ReadValue<uint16_t>(a_buff);
+            a_length = ReadValue<uint16_t>(a_buff, a_endBuff);
             break;
         case MAP_32:
-            a_length = ReadValue<uint32_t>(a_buff);
+            a_length = ReadValue<uint32_t>(a_buff, a_endBuff);
             break;
         default:
             throw runtime_error("Invalid map format '" +
@@ -728,8 +746,8 @@ inline AData::Ptr ReadStruct(const char *&a_buff, byte a_type,
     bool l_allStrings = true;
     for (size_t i = 0; i < a_length; ++i)
     {
-        AData::Ptr l_key = ReadData(a_buff, a_context);
-        AData::Ptr l_value = ReadData(a_buff, a_context);
+        AData::Ptr l_key = ReadData(a_buff, a_context, a_endBuff);
+        AData::Ptr l_value = ReadData(a_buff, a_context, a_endBuff);
 
         if (l_key->Type() != DataType::String)
         {
@@ -798,42 +816,42 @@ inline size_t CalcArraySize(const CArrayData &a_data)
     return len;
 }
 
-inline void WriteArray(char *&a_buff, const CArrayData &a_data)
+inline void WriteArray(char *&a_buff, const CArrayData &a_data, const char *a_endBuff)
 {
     if (a_data.size() <= 0xf)
     {
-        WriteValue<uint8_t>(a_buff, FIX_ARRAY | byte(a_data.size()));
+        WriteValue<uint8_t>(a_buff, FIX_ARRAY | byte(a_data.size()), a_endBuff);
     }
     else if (a_data.size() <= 0xffff)
     {
-        WriteValue(a_buff, ARR_16);
-        WriteValue<uint16_t>(a_buff, a_data.size());
+        WriteValue(a_buff, ARR_16, a_endBuff);
+        WriteValue<uint16_t>(a_buff, a_data.size(), a_endBuff);
     }
     else
     {
-        WriteValue(a_buff, ARR_32);
-        WriteValue<uint32_t>(a_buff, a_data.size());
+        WriteValue(a_buff, ARR_32, a_endBuff);
+        WriteValue<uint32_t>(a_buff, a_data.size(), a_endBuff);
     }
 
     for (const AData::Ptr &l_data : a_data)
     {
-        WriteData(a_buff, *l_data);
+        WriteData(a_buff, *l_data, a_endBuff);
     }
 }
 
 inline AData::Ptr ReadArray(const char *&a_buff, byte a_type,
                             const CSerializationContext &a_context,
-                            size_t a_length)
+                            size_t a_length, const char *a_endBuff)
 {
     if (a_length == SIZE_MAX)
     {
         switch (a_type)
         {
         case ARR_16:
-            a_length = ReadValue<uint16_t>(a_buff);
+            a_length = ReadValue<uint16_t>(a_buff, a_endBuff);
             break;
         case ARR_32:
-            a_length = ReadValue<uint32_t>(a_buff);
+            a_length = ReadValue<uint32_t>(a_buff, a_endBuff);
             break;
         default:
             throw runtime_error("Unsupported array format '" +
@@ -846,7 +864,7 @@ inline AData::Ptr ReadArray(const char *&a_buff, byte a_type,
 
     for (size_t i = 0; i < a_length; ++i)
     {
-        l_ret->Add(ReadData(a_buff, a_context));
+        l_ret->Add(ReadData(a_buff, a_context, a_endBuff));
     }
 
     return move(l_ret);
@@ -883,26 +901,26 @@ size_t p_CalcPrimArraySizeImpl(const CPrimArrayData<T> &a_data)
 }
 
 template<typename T>
-void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<T> &a_data)
+void WritePrimArrayImpl(char *&a_buff, const CPrimArrayData<T> &a_data, const char *a_endBuff)
 {
     if (a_data.size() <= 0xf)
     {
-        WriteValue<uint8_t>(a_buff, FIX_ARRAY | byte(a_data.size()));
+        WriteValue<uint8_t>(a_buff, FIX_ARRAY | byte(a_data.size()), a_endBuff);
     }
     else if (a_data.size() <= 0xffff)
     {
-        WriteValue(a_buff, ARR_16);
-        WriteValue<uint16_t>(a_buff, a_data.size());
+        WriteValue(a_buff, ARR_16, a_endBuff);
+        WriteValue<uint16_t>(a_buff, a_data.size(), a_endBuff);
     }
     else
     {
-        WriteValue(a_buff, ARR_32);
-        WriteValue<uint32_t>(a_buff, a_data.size());
+        WriteValue(a_buff, ARR_32, a_endBuff);
+        WriteValue<uint32_t>(a_buff, a_data.size(), a_endBuff);
     }
 
     for (const T &l_val : a_data)
     {
-        WritePrimitive(a_buff, l_val);
+        WritePrimitive(a_buff, l_val, a_endBuff);
     }
 }
 
@@ -934,11 +952,11 @@ inline size_t CalcPrimArraySize(const APrimArrayDataBase &a_data)
 #undef CALC_SIZE
 }
 
-inline void WritePrimArray(char *&a_buff, const APrimArrayDataBase &a_data)
+inline void WritePrimArray(char *&a_buff, const APrimArrayDataBase &a_data, const char *a_endBuff)
 {
 #define WRITE_PRIM(name, type) \
     case DataType::name: \
-        WritePrimArrayImpl(a_buff, static_cast<const CPrimArrayData<type> &>(a_data)); \
+        WritePrimArrayImpl(a_buff, static_cast<const CPrimArrayData<type> &>(a_data), a_endBuff); \
         break
 
     switch (a_data.InnerType())
@@ -968,51 +986,55 @@ inline size_t CalcBufferSize(const CBufferData &a_data)
     return CalcRawSize(a_data.BufferSize());
 }
 
-inline void WriteBuffer(char *&a_buff, const CBufferData &a_data)
+inline void WriteBuffer(char *&a_buff, const CBufferData &a_data, const char *a_endBuff)
 {
     if (a_data.BufferSize() <= 0xff)
     {
-        WriteValue(a_buff, BIN_8);
-        WriteValue<uint8_t>(a_buff, a_data.BufferSize());
+        WriteValue(a_buff, BIN_8, a_endBuff);
+        WriteValue<uint8_t>(a_buff, a_data.BufferSize(), a_endBuff);
     }
     else if (a_data.BufferSize() <= 0xffff)
     {
-        WriteValue(a_buff, BIN_16);
-        WriteValue<uint16_t>(a_buff, a_data.BufferSize());
+        WriteValue(a_buff, BIN_16, a_endBuff);
+        WriteValue<uint16_t>(a_buff, a_data.BufferSize(), a_endBuff);
     }
     else if (a_data.BufferSize() <= 0xffffffff)
     {
-        WriteValue(a_buff, BIN_32);
-        WriteValue<uint32_t>(a_buff, a_data.BufferSize());
+        WriteValue(a_buff, BIN_32, a_endBuff);
+        WriteValue<uint32_t>(a_buff, a_data.BufferSize(), a_endBuff);
     }
     else
     {
         throw runtime_error("Cannot write a buffer larger than (2^32)-1");
     }
 
-    WriteRawBytes(a_buff, a_data.GetBuffer().data(), a_data.BufferSize());
+    WriteRawBytes(a_buff, a_data.GetBuffer().data(), a_data.BufferSize(), a_endBuff);
 }
 
 inline AData::Ptr ReadBuffer(const char *&a_buff, byte a_type,
-                             const CSerializationContext &a_context)
+                             const CSerializationContext &a_context,
+                             const char *a_endBuff)
 {
     size_t l_length;
     switch (a_type)
     {
     case BIN_8:
-        l_length = ReadValue<uint8_t>(a_buff);
+        l_length = ReadValue<uint8_t>(a_buff, a_endBuff);
         break;
     case BIN_16:
-        l_length = ReadValue<uint16_t>(a_buff);
+        l_length = ReadValue<uint16_t>(a_buff, a_endBuff);
         break;
     case BIN_32:
-        l_length = ReadValue<uint32_t>(a_buff);
+        l_length = ReadValue<uint32_t>(a_buff, a_endBuff);
         break;
     default:
         throw runtime_error("Unsupported bin type '" +
                             to_string(a_type) +
                             "'");
     }
+
+    if (a_buff + l_length > a_endBuff)
+        throw CBufferOverflowException();
 
     util::CBuffer l_buff(l_length);
     memcpy(l_buff.data(), a_buff, l_length);
@@ -1032,7 +1054,7 @@ size_t CMsgPackSerializer::SerializeInto(const AData &a_data, char *a_buffer, si
 {
     char *l_writeBuff = a_buffer;
 
-    WriteData(l_writeBuff, a_data);
+    WriteData(l_writeBuff, a_data, l_writeBuff + a_bufferSize);
 
     size_t l_writeSize = l_writeBuff - a_buffer;
 
@@ -1055,7 +1077,7 @@ string CMsgPackSerializer::SerializeData(const AData &a_data) const
 
 AData::Ptr CMsgPackSerializer::DeserializeData(const char *a_buf, const char *a_endBuf) const
 {
-    AData::Ptr l_ret = ReadData(a_buf, CSerializationContext());
+    AData::Ptr l_ret = ReadData(a_buf, CSerializationContext(), a_endBuf);
 
     assert(a_buf <= a_endBuf);
 
