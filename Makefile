@@ -193,7 +193,8 @@ demo/client_demo_debug: $(CLIENT_DEMO_SRC) $(LIBS_D)
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
 		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
-        -L$(SNAPPY_PATH)/lib -lsnappy
+        	-L$(SNAPPY_PATH)/lib -lsnappy \
+        	-lpthread
         
 demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(CLIENT_DEMO_SRC) -o $@ \
@@ -202,7 +203,8 @@ demo/client_demo_release: $(CLIENT_DEMO_SRC) $(LIBS)
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
 		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
-        -L$(SNAPPY_PATH)/lib -lsnappy
+        	-L$(SNAPPY_PATH)/lib -lsnappy \
+        	-lpthread
 
 demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 	$(CC) $(DFLAGS) $(SERVER_DEMO_SRC) -o $@ \
@@ -211,7 +213,8 @@ demo/server_demo_debug: $(SERVER_DEMO_SRC) $(LIBS_D)
 		-Lthirdparty/pugixml/lib \
 		-laxcommd -laxserd -laxutild -lpugixmld \
 		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
-        -L$(SNAPPY_PATH)/lib -lsnappy
+        	-L$(SNAPPY_PATH)/lib -lsnappy \
+        	-lpthread
         
 demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 	$(CC) $(RFLAGS) $(SERVER_DEMO_SRC) -o $@ \
@@ -220,7 +223,8 @@ demo/server_demo_release: $(SERVER_DEMO_SRC) $(LIBS)
 		-Lthirdparty/pugixml/lib \
 		-laxcomm -laxser -laxutil -lpugixml \
 		-L$(LIBEVENT_PATH)/lib -levent -levent_pthreads \
-        -L$(SNAPPY_PATH)/lib -lsnappy
+        	-L$(SNAPPY_PATH)/lib -lsnappy \
+        	-lpthread
         
 clean:
 	rm -rf lib
