@@ -44,13 +44,12 @@ private:
 
     std::string *GetVariable(const std::string &a_name)
     {
-        auto iter = std::find_if(std::begin(m_varMap), std::end(m_varMap),
-            [&a_name] (const TVariable &v) { return a_name == v.first; });
-
-        if (iter == std::end(m_varMap))
-            return nullptr;
-        else
-            return &iter->second;
+        for (TVariable &v : m_varMap)
+        {
+            if (v.first == a_name)
+                return &v.second;
+        }
+        return nullptr;
     }
     void SetVariable(const std::string &a_name, std::string a_val)
     {

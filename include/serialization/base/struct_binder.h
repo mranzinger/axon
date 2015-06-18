@@ -163,6 +163,13 @@ public:
 	bool IsRead() const { return m_reader; }
 	bool IsWrite() const { return m_writer; }
 
+	const CSerializationContext &GetContext() const {
+	    if (m_writer)
+            return m_writer->GetContext();
+        else
+            return m_reader->GetContext();
+    }
+
 	template<typename T, typename ...Flags>
 	const CStructBinder &operator()(const std::string &a_name, T &a_val, Flags ...a_flags) const
 	{
