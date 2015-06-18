@@ -84,6 +84,23 @@ public:
 	{
 		return (m_flags & (uint32_t)SerializationFlags::Compress);
 	}
+
+    std::string *GetVariable(const std::string &a_name) const
+    {
+        return m_impl->GetVariable(a_name);                 
+    }
+    bool IsVarEqual(const std::string &a_name, const std::string &a_val) const
+    {
+        std::string *v = GetVariable(a_name);
+        if (v)
+            return *v == a_val;
+        else
+            return false;
+    }
+    void SetVariable(const std::string &a_name, std::string a_val) const
+    {
+        m_impl->SetVariable(a_name, std::move(a_val));
+    }
 };
 
 class AXON_SERIALIZE_API CSerFlagScope
